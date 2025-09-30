@@ -20,6 +20,8 @@ compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 
 android-library = { id = "com.android.library", version.ref = "agp" }
 
+vanniktech-mavenPublish = { id = "com.vanniktech.maven.publish", version = "0.34.0" }
+
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-browser = { module = "org.jetbrains.kotlinx:kotlinx-browser", version.ref = "kotlinx-browser" }

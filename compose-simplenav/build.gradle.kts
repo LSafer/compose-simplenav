@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    `maven-publish`
+    alias(libs.plugins.vanniktech.mavenPublish)
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.android.library)
@@ -12,7 +12,6 @@ plugins {
 }
 
 group = "net.lsafer.compose-simplenav"
-version = "local_snapshot"
 
 kotlin {
     androidTarget {
@@ -75,5 +74,40 @@ android {
     }
     dependencies {
         debugImplementation(compose.uiTooling)
+    }
+}
+
+mavenPublishing {
+    publishToMavenCentral()
+    signAllPublications()
+    coordinates(
+        groupId = group.toString(),
+        artifactId = "compose-simplenav",
+        version = version.toString(),
+    )
+    pom {
+        name = "Compose SimpleNav"
+        description = "Simple navigation library for Compose Multiplatform"
+        inceptionYear = "2025"
+        url = "https://github.com/LSafer/compose-simplenav/"
+        licenses {
+            license {
+                name = "The Apache License, Version 2.0"
+                url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+                distribution = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+            }
+        }
+        developers {
+            developer {
+                id = "LSafer"
+                name = "Sulaiman Oboody"
+                url = "https://github.com/LSafer/"
+            }
+        }
+        scm {
+            url = "https://github.com/LSafer/compose-simplenav/"
+            connection = "scm:git:git://github.com/LSafer/compose-simplenav.git"
+            developerConnection = "scm:git:ssh://git@github.com/LSafer/compose-simplenav.git"
+        }
     }
 }
