@@ -1,17 +1,20 @@
-### Compose SimpleNav [![](https://jitpack.io/v/net.lsafer/compose-simplenav.svg)](https://jitpack.io/#net.lsafer/compose-simplenav)
+<h3>
+Compose SimpleNav
+<a href="https://jitpack.io/#net.lsafer/compose-simplenav">
+<img src="https://jitpack.io/v/net.lsafer/compose-simplenav.svg"/>
+</a>
+<a href="https://central.sonatype.com/namespace/net.lsafer.compose-simplenav">
+<img src="https://img.shields.io/maven-central/v/net.lsafer.compose-simplenav/compose-simplenav?color=green"/>
+</a>
+</h3>
 
 Simple Compose navigation library.
 
 ### Install
 
-The main way of installing this library is
-using `jitpack.io`
-
 ```kts
 repositories {
-    // ...
     mavenCentral()
-    maven { url = uri("https://jitpack.io") }
 }
 
 dependencies {
