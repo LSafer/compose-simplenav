@@ -42,11 +42,15 @@ fun <T : Any> SimpleNavHost(
     scope.default?.invoke(current)
 }
 
+// using the U : T shenanigan here due to this:
+// https://youtrack.jetbrains.com/issue/KT-81365/Overload-resolution-ambiguity-between-candidates
 @Composable
-fun <T : Any> SimpleNavHost(
-    current: T,
-    block: NavHostScope<T>.() -> Unit
+fun <T : Any, U : T> SimpleNavHost(
+    current: T?,
+    block: NavHostScope<U>.() -> Unit
 ) {
+    @Suppress("UNCHECKED_CAST")
+    block as NavHostScope<T>.() -> Unit
     val scope = NavHostScope<T>().apply(block)
 
     for (mapping in scope.mappings) {
