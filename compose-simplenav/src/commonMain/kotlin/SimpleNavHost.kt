@@ -41,3 +41,20 @@ fun <T : Any> SimpleNavHost(
 
     scope.default?.invoke(current)
 }
+
+@Composable
+fun <T : Any> SimpleNavHost(
+    current: T,
+    block: NavHostScope<T>.() -> Unit
+) {
+    val scope = NavHostScope<T>().apply(block)
+
+    for (mapping in scope.mappings) {
+        if (mapping.condition(current)) {
+            mapping.content(current)
+            return
+        }
+    }
+
+    scope.default?.invoke(current)
+}
