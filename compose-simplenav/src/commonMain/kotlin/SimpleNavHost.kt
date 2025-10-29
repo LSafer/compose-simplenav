@@ -19,6 +19,10 @@ class NavHostScope<T : Any> {
         entry({ it is U }, { content(it as U) })
     }
 
+    fun entry(value: T, content: @Composable (T) -> Unit) {
+        entry({ it == value }, { content(it as T) })
+    }
+
     fun default(content: @Composable (T?) -> Unit) {
         default = content
     }
