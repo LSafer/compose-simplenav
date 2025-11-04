@@ -2,7 +2,7 @@ package net.lsafer.compose.simplenav
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.KSerializer
 
 interface SimpleNavController<T : Any> {
@@ -11,7 +11,7 @@ interface SimpleNavController<T : Any> {
     }
 
     val stateSerializer: KSerializer<out State<T>>
-    val state: MutableStateFlow<out State<T>>
+    val state: StateFlow<State<T>>
 
     fun push(route: T): Boolean
     fun replace(route: T): Boolean

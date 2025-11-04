@@ -2,6 +2,7 @@ package net.lsafer.compose.simplenav
 
 import kotlinx.browser.window
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
@@ -9,6 +10,8 @@ import net.lsafer.compose.simplenav.internal.decodeBase64UrlSafeToStringOrNull
 import net.lsafer.compose.simplenav.internal.deserializeJsonOrNull
 import net.lsafer.compose.simplenav.internal.encodeBase64UrlSafe
 import net.lsafer.compose.simplenav.internal.serializeToJsonString
+import org.w3c.dom.HashChangeEvent
+import org.w3c.dom.events.Event
 
 inline fun <reified T : Any> WindowSimpleNavController(
     route: T? = null,
@@ -29,17 +32,18 @@ class WindowSimpleNavController<T : Any>(
     ) : SimpleNavController.State<T>
 
     var isInstalled: Boolean = false
-        internal set
+        private set
 
-    override val state = MutableStateFlow(initialState)
+    private val _state = MutableStateFlow(initialState)
+    override val state: StateFlow<State<T>> = _state
 
     override fun push(route: T): Boolean {
         require(isInstalled) { "NavController not installed" }
         // no need to sync in js land
-        val current = state.value
+        val current = _state.value
         if (route == current.route) return false
         val new = current.copy(route = route)
-        state.value = new
+        _state.value = new
         window.location.hash = new.encodeHash()
         return true
     }
@@ -47,10 +51,10 @@ class WindowSimpleNavController<T : Any>(
     override fun replace(route: T): Boolean {
         require(isInstalled) { "NavController not installed" }
         // no need to sync in js land
-        val current = state.value
+        val current = _state.value
         if (route == current.route) return false
         val new = current.copy(route = route)
-        state.value = new
+        _state.value = new
         window.location.replace("#${new.encodeHash()}")
         return true
     }
@@ -67,12 +71,64 @@ class WindowSimpleNavController<T : Any>(
         return true
     }
 
-    internal fun State<T>.encodeHash(): String {
+    // ========== GLOBAL INSTALL ==========
+
+    companion object {
+        var globalIsInstalled = false
+            private set
+    }
+
+    private val _hashchangeListener = { event: Event ->
+        @Suppress("USELESS_CAST")
+        event as HashChangeEvent
+
+        val newState = event.newURL
+            .substringAfterLast("#")
+            .decodeHashOrNull()
+
+        if (newState != null)
+            _state.value = newState
+    }
+
+    fun tryGlobalInstall() = if (globalIsInstalled) false else run { globalInstall(); true }
+    fun tryGlobalUninstall() = if (!isInstalled) false else run { globalUninstall(); true }
+
+    fun globalInstall() {
+        check(!globalIsInstalled) { "A NavController was already globally installed" }
+
+        globalIsInstalled = true
+        isInstalled = true
+
+        // initial [window.location.hash] => [navController]
+        val initialState = window.location.hash.decodeHashOrNull()
+
+        if (initialState != null)
+            _state.value = initialState
+
+        // initial [navController] => [window.location.hash]
+        window.location.replace("#${state.value.encodeHash()}")
+
+        // collect [window.location.hash] => [navController]
+        window.addEventListener("hashchange", _hashchangeListener)
+    }
+
+    fun globalUninstall() {
+        check(isInstalled) { "NavController is not globally installed" }
+
+        window.removeEventListener("hashchange", _hashchangeListener)
+
+        isInstalled = false
+        globalIsInstalled = false
+    }
+
+    // ========== INTERNALS ==========
+
+    private fun State<T>.encodeHash(): String {
         return serializeToJsonString(stateSerializer)
             .encodeBase64UrlSafe()
     }
 
-    internal fun String.decodeHashOrNull(): State<T>? {
+    private fun String.decodeHashOrNull(): State<T>? {
         return decodeBase64UrlSafeToStringOrNull()
             ?.deserializeJsonOrNull(stateSerializer)
     }
