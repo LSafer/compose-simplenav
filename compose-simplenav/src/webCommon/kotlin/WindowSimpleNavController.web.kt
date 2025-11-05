@@ -1,8 +1,10 @@
 package net.lsafer.compose.simplenav
 
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import kotlinx.browser.window
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
@@ -24,26 +26,28 @@ inline fun <reified T : Any> WindowSimpleNavController(
 
 class WindowSimpleNavController<T : Any>(
     initialState: State<T> = State(),
-    override val stateSerializer: KSerializer<State<T>>,
+    private val stateSerializer: KSerializer<State<T>>,
 ) : SimpleNavController<T> {
     @Serializable
     data class State<T : Any>(
-        override val route: T? = null,
-    ) : SimpleNavController.State<T>
+        val route: T? = null,
+    )
 
     var isInstalled: Boolean = false
         private set
 
-    private val _state = MutableStateFlow(initialState)
-    override val state: StateFlow<State<T>> = _state
+    var state by mutableStateOf<State<T>>(initialState)
+        private set
+
+    override val current by derivedStateOf { state.route }
 
     override fun push(route: T): Boolean {
         require(isInstalled) { "NavController not installed" }
         // no need to sync in js land
-        val current = _state.value
+        val current = state
         if (route == current.route) return false
         val new = current.copy(route = route)
-        _state.value = new
+        state = new
         window.location.hash = new.encodeHash()
         return true
     }
@@ -51,10 +55,10 @@ class WindowSimpleNavController<T : Any>(
     override fun replace(route: T): Boolean {
         require(isInstalled) { "NavController not installed" }
         // no need to sync in js land
-        val current = _state.value
+        val current = state
         if (route == current.route) return false
         val new = current.copy(route = route)
-        _state.value = new
+        state = new
         window.location.replace("#${new.encodeHash()}")
         return true
     }
@@ -87,7 +91,7 @@ class WindowSimpleNavController<T : Any>(
             .decodeHashOrNull()
 
         if (newState != null)
-            _state.value = newState
+            state = newState
     }
 
     fun tryGlobalInstall() = if (globalIsInstalled) false else run { globalInstall(); true }
@@ -103,10 +107,10 @@ class WindowSimpleNavController<T : Any>(
         val initialState = window.location.hash.decodeHashOrNull()
 
         if (initialState != null)
-            _state.value = initialState
+            state = initialState
 
         // initial [navController] => [window.location.hash]
-        window.location.replace("#${state.value.encodeHash()}")
+        window.location.replace("#${state.encodeHash()}")
 
         // collect [window.location.hash] => [navController]
         window.addEventListener("hashchange", _hashchangeListener)
