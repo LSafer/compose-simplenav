@@ -1,91 +1,124 @@
 package net.lsafer.compose.simplenav
 
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.atomicfu.locks.synchronized
-import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.serializer
 
-inline fun <reified T : Any> InMemorySimpleNavController(default: T) =
-    InMemorySimpleNavController(InMemorySimpleNavController.State(listOf(default)))
+fun <T : Any> InMemorySimpleNavController(
+    default: T,
+    tangents: Map<String, String> = emptyMap(),
+) = InMemorySimpleNavController(SimpleNavState(default, tangents))
 
-inline fun <reified T : Any> InMemorySimpleNavController(
-    entries: List<T> = emptyList(),
-    position: Int = entries.size - 1,
-) = InMemorySimpleNavController(InMemorySimpleNavController.State(entries, position))
+fun <T : Any> InMemorySimpleNavController(
+    initialState: SimpleNavState<T>
+): InMemorySimpleNavController<T> {
+    return InMemorySimpleNavControllerImpl(initialState)
+}
 
-inline fun <reified T : Any> InMemorySimpleNavController(
-    initialState: InMemorySimpleNavController.State<T> =
-        InMemorySimpleNavController.State(),
-) = InMemorySimpleNavController(initialState, serializer())
-
-class InMemorySimpleNavController<T : Any>(
-    initialState: State<T> = State(),
-    private val stateSerializer: KSerializer<State<T>>,
-) : SimpleNavController<T> {
-    @Serializable
-    data class State<T : Any>(
-        val entries: List<T> = emptyList(),
-        val position: Int = entries.size - 1,
-    ) {
-        val route: T? get() = entries.getOrNull(position)
-    }
-
-    @OptIn(InternalCoroutinesApi::class)
-    private val lock = SynchronizedObject()
-
-    var state by mutableStateOf<State<T>>(initialState)
-        private set
-
-    override val current by derivedStateOf { state.route }
+abstract class InMemorySimpleNavController<T : Any> : SimpleNavController<T>() {
+    internal abstract val lock: SynchronizedObject
+    internal abstract fun internalSetState(newState: SimpleNavState<T>, replace: Boolean)
 
     override fun push(route: T): Boolean {
         synchronized(lock) {
-            val it = state
-            if (route == it.route) return false
-            state = State(
-                entries = it.entries.take(it.position + 1) + route,
-                position = it.position + 1,
-            )
+            if (route == state.route)
+                return false
+
+            val newState = SimpleNavState(route)
+            internalSetState(newState, replace = false)
         }
         return true
     }
 
     override fun replace(route: T): Boolean {
         synchronized(lock) {
-            val it = state
-            if (route == it.route) return false
-            state = State(
-                entries = buildList {
-                    addAll(it.entries)
-                    set(it.position, route)
-                },
-                position = it.position,
-            )
+            if (route == state.route)
+                return false
+
+            val newState = SimpleNavState(route)
+            internalSetState(newState, replace = true)
         }
         return true
     }
 
+    override fun <U : Any> tangent(
+        name: String,
+        default: U,
+        serializer: KSerializer<U>,
+    ): InMemorySimpleNavController<U> {
+        return InMemorySimpleNavControllerTangent(
+            outer = this,
+            name = name,
+            defaultState = SimpleNavState(default),
+            stateSerializer = SimpleNavState.serializer(serializer),
+        )
+    }
+}
+
+internal class InMemorySimpleNavControllerImpl<T : Any>(
+    initialState: SimpleNavState<T>,
+) : InMemorySimpleNavController<T>() {
+    override val lock = SynchronizedObject()
+
+    private val stateList = mutableStateListOf<SimpleNavState<T>>(initialState)
+    private var position by mutableStateOf(0)
+
+    override val state by derivedStateOf { stateList[position] }
+
     override fun back(): Boolean {
         synchronized(lock) {
-            val it = state
-            if (it.position <= -1) return false
-            state = it.copy(position = it.position - 1)
+            if (position <= 0)
+                return false
+
+            position--
         }
         return true
     }
 
     override fun forward(): Boolean {
         synchronized(lock) {
-            val it = state
-            if (it.position >= it.entries.lastIndex) return false
-            state = it.copy(position = it.position + 1)
+            if (position >= stateList.lastIndex)
+                return false
+
+            position++
         }
         return true
+    }
+
+    override fun internalSetState(newState: SimpleNavState<T>, replace: Boolean) {
+        if (replace) {
+            stateList.removeRange(position + 1, stateList.size)
+            stateList[position] = newState
+        } else {
+            stateList.removeRange(position + 1, stateList.size)
+            stateList += newState
+            position++
+        }
+    }
+}
+
+internal class InMemorySimpleNavControllerTangent<T : Any, U : Any>(
+    private val outer: InMemorySimpleNavController<T>,
+    private val name: String,
+    private val defaultState: SimpleNavState<U>,
+    private val stateSerializer: KSerializer<SimpleNavState<U>>,
+) : InMemorySimpleNavController<U>() {
+    override val lock = outer.lock
+    override val state by derivedStateOf {
+        outer.state.getTangent(name, stateSerializer)
+            ?: defaultState
+    }
+
+    override fun back() = outer.back()
+    override fun forward() = outer.forward()
+
+    override fun internalSetState(newState: SimpleNavState<U>, replace: Boolean) {
+        val newOuterState = outer.state.withTangent(
+            name = name,
+            value = newState,
+            serializer = stateSerializer,
+        )
+        outer.internalSetState(newOuterState, replace)
     }
 }
