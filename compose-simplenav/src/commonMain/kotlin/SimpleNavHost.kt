@@ -2,16 +2,16 @@ package net.lsafer.compose.simplenav
 
 import androidx.compose.runtime.Composable
 
-internal data class NavHostEntry<T : Any>(
-    val condition: (T?) -> Boolean,
-    val content: @Composable (T?) -> Unit,
+internal data class NavHostEntry<T>(
+    val condition: (T) -> Boolean,
+    val content: @Composable (T) -> Unit,
 )
 
-class NavHostScope<T : Any> {
-    internal var default: @Composable ((T?) -> Unit)? = null
+class NavHostScope<T> {
+    internal var default: @Composable ((T) -> Unit)? = null
     internal val mappings = mutableListOf<NavHostEntry<T>>()
 
-    fun entry(condition: (T?) -> Boolean, content: @Composable (T?) -> Unit) {
+    fun entry(condition: (T) -> Boolean, content: @Composable (T) -> Unit) {
         mappings += NavHostEntry(condition, content)
     }
 
@@ -20,10 +20,10 @@ class NavHostScope<T : Any> {
     }
 
     fun entry(value: T, content: @Composable (T) -> Unit) {
-        entry({ it == value }, { content(it as T) })
+        entry({ it == value }, { content(it) })
     }
 
-    fun default(content: @Composable (T?) -> Unit) {
+    fun default(content: @Composable (T) -> Unit) {
         default = content
     }
 }
@@ -49,8 +49,8 @@ fun <T : Any> SimpleNavHost(
 // using the U : T shenanigan here due to this:
 // https://youtrack.jetbrains.com/issue/KT-81365/Overload-resolution-ambiguity-between-candidates
 @Composable
-fun <T : Any, U : T> SimpleNavHost(
-    current: T?,
+fun <T, U : T> SimpleNavHost(
+    current: T,
     block: NavHostScope<U>.() -> Unit
 ) {
     @Suppress("UNCHECKED_CAST")
