@@ -16,7 +16,7 @@ fun <T : Any> InMemorySimpleNavController(
     return InMemorySimpleNavControllerImpl(initialState)
 }
 
-abstract class InMemorySimpleNavController<T : Any> : SimpleNavController<T>() {
+sealed class InMemorySimpleNavController<T : Any> : SimpleNavController<T>() {
     internal abstract val lock: SynchronizedObject
     internal abstract fun internalSetState(newState: SimpleNavState<T>, replace: Boolean)
 

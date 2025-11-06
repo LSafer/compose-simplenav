@@ -14,8 +14,6 @@ import net.lsafer.compose.simplenav.internal.serializeToJsonString
 import org.w3c.dom.HashChangeEvent
 import org.w3c.dom.events.Event
 
-private var globalIsInstalled by mutableStateOf(false)
-
 inline fun <reified T : Any> WindowSimpleNavController(
     default: T,
     tangents: Map<String, String> = emptyMap()
@@ -37,7 +35,11 @@ fun <T : Any> WindowSimpleNavController(
     )
 }
 
-abstract class WindowSimpleNavController<T : Any> : SimpleNavController<T>() {
+sealed class WindowSimpleNavController<T : Any> : SimpleNavController<T>() {
+    companion object {
+        var globalIsInstalled by mutableStateOf(false)
+    }
+
     abstract val isInstalled: Boolean
 
     abstract fun globalInstall()
