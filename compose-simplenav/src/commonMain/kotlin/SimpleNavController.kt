@@ -20,21 +20,36 @@ abstract class SimpleNavController<T : Any> {
     abstract fun forward(): Boolean
 
     abstract fun navigate(
+        replace: Boolean = false,
+        inherit: Boolean = false,
+        transform: (T) -> T,
+    ): Boolean
+
+    fun navigate(
         route: T,
         replace: Boolean = false,
         inherit: Boolean = false,
-    ): Boolean
+    ): Boolean = navigate(
+        replace = replace,
+        inherit = inherit,
+        transform = { route },
+    )
+
+    fun push(route: T) = navigate(route, replace = false, inherit = false)
+    fun pushInherit(route: T) = navigate(route, replace = false, inherit = true)
+    fun replace(route: T) = navigate(route, replace = true, inherit = false)
+    fun replaceInherit(route: T) = navigate(route, replace = true, inherit = true)
+
+    fun push(transform: (T) -> T) = navigate(replace = false, inherit = false, transform)
+    fun pushInherit(transform: (T) -> T) = navigate(replace = false, inherit = true, transform)
+    fun replace(transform: (T) -> T) = navigate(replace = true, inherit = false, transform)
+    fun replaceInherit(transform: (T) -> T) = navigate(replace = true, inherit = true, transform)
 
     abstract fun <U : Any> tangent(
         name: String,
         default: U,
         serializer: KSerializer<U>,
     ): SimpleNavController<U>
-
-    fun push(route: T) = navigate(route, replace = false, inherit = false)
-    fun pushInherit(route: T) = navigate(route, replace = false, inherit = true)
-    fun replace(route: T) = navigate(route, replace = true, inherit = false)
-    fun replaceInherit(route: T) = navigate(route, replace = true, inherit = true)
 
     inline fun <reified U : Any> tangent(name: String, default: U) =
         tangent(name, default, serializer<U>())

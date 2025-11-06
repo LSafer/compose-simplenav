@@ -21,19 +21,20 @@ sealed class InMemorySimpleNavController<T : Any> : SimpleNavController<T>() {
     internal abstract fun internalSetState(newState: SimpleNavState<T>, replace: Boolean)
 
     override fun navigate(
-        route: T,
         replace: Boolean,
         inherit: Boolean,
+        transform: (T) -> T,
     ): Boolean {
         synchronized(lock) {
             val current = state
+            val newRoute = transform(current.route)
 
-            if (route == current.route)
+            if (newRoute == current.route)
                 return false
 
             val newState = when {
-                inherit -> current.copy(route = route)
-                else -> SimpleNavState(route)
+                inherit -> current.copy(route = newRoute)
+                else -> SimpleNavState(newRoute)
             }
 
             internalSetState(newState, replace)
