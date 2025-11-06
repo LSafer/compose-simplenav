@@ -4,9 +4,16 @@ import androidx.compose.runtime.*
 import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.atomicfu.locks.synchronized
 import kotlinx.serialization.KSerializer
+import kotlin.jvm.JvmName
 
-fun <T> InMemorySimpleNavController(
+fun <T : Any> InMemorySimpleNavController(
     default: T,
+    tangents: Map<String, String> = emptyMap(),
+) = InMemorySimpleNavController(SimpleNavState(default, tangents))
+
+@JvmName("InMemorySimpleNavController_nullable")
+fun <T> InMemorySimpleNavController(
+    default: T? = null,
     tangents: Map<String, String> = emptyMap(),
 ) = InMemorySimpleNavController(SimpleNavState(default, tangents))
 

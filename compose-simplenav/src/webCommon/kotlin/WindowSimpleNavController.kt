@@ -13,9 +13,16 @@ import net.lsafer.compose.simplenav.internal.encodeBase64UrlSafe
 import net.lsafer.compose.simplenav.internal.serializeToJsonString
 import org.w3c.dom.HashChangeEvent
 import org.w3c.dom.events.Event
+import kotlin.jvm.JvmName
 
-inline fun <reified T> WindowSimpleNavController(
+inline fun <reified T : Any> WindowSimpleNavController(
     default: T,
+    tangents: Map<String, String> = emptyMap()
+) = WindowSimpleNavController(SimpleNavState(default, tangents))
+
+@JvmName("WindowSimpleNavController_nullable")
+inline fun <reified T> WindowSimpleNavController(
+    default: T? = null,
     tangents: Map<String, String> = emptyMap()
 ) = WindowSimpleNavController(SimpleNavState(default, tangents))
 

@@ -4,6 +4,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
+import kotlin.jvm.JvmName
 
 abstract class SimpleNavController<T> {
     /**
@@ -51,9 +52,17 @@ abstract class SimpleNavController<T> {
         serializer: KSerializer<U>,
     ): SimpleNavController<U>
 
-    inline fun <reified U> tangent(name: String, default: U) =
+    inline fun <reified U : Any> tangent(name: String, default: U) =
         tangent(name, default, serializer<U>())
 
-    inline fun <reified U> tangent(default: U) =
+    inline fun <reified U : Any> tangent(default: U) =
         tangent(U::class.simpleName.orEmpty(), default, serializer<U>())
+
+    @JvmName("tangent_nullable")
+    inline fun <reified U> tangent(name: String, default: U? = null) =
+        tangent(name, default, serializer<U?>())
+
+    @JvmName("tangent_nullable")
+    inline fun <reified U> tangent(default: U? = null) =
+        tangent(U::class.simpleName.orEmpty(), default, serializer<U?>())
 }
