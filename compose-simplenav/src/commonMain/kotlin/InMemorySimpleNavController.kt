@@ -5,18 +5,18 @@ import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.atomicfu.locks.synchronized
 import kotlinx.serialization.KSerializer
 
-fun <T : Any> InMemorySimpleNavController(
+fun <T> InMemorySimpleNavController(
     default: T,
     tangents: Map<String, String> = emptyMap(),
 ) = InMemorySimpleNavController(SimpleNavState(default, tangents))
 
-fun <T : Any> InMemorySimpleNavController(
+fun <T> InMemorySimpleNavController(
     initialState: SimpleNavState<T>
 ): InMemorySimpleNavController<T> {
     return InMemorySimpleNavControllerImpl(initialState)
 }
 
-sealed class InMemorySimpleNavController<T : Any> : SimpleNavController<T>() {
+sealed class InMemorySimpleNavController<T> : SimpleNavController<T>() {
     internal abstract val lock: SynchronizedObject
     internal abstract fun internalSetState(newState: SimpleNavState<T>, replace: Boolean)
 
@@ -42,7 +42,7 @@ sealed class InMemorySimpleNavController<T : Any> : SimpleNavController<T>() {
         return true
     }
 
-    override fun <U : Any> tangent(
+    override fun <U> tangent(
         name: String,
         default: U,
         serializer: KSerializer<U>,
@@ -56,7 +56,7 @@ sealed class InMemorySimpleNavController<T : Any> : SimpleNavController<T>() {
     }
 }
 
-internal class InMemorySimpleNavControllerImpl<T : Any>(
+internal class InMemorySimpleNavControllerImpl<T>(
     initialState: SimpleNavState<T>,
 ) : InMemorySimpleNavController<T>() {
     override val lock = SynchronizedObject()
@@ -98,7 +98,7 @@ internal class InMemorySimpleNavControllerImpl<T : Any>(
     }
 }
 
-internal class InMemorySimpleNavControllerTangent<T : Any, U : Any>(
+internal class InMemorySimpleNavControllerTangent<T, U>(
     private val outer: InMemorySimpleNavController<T>,
     private val name: String,
     private val defaultState: SimpleNavState<U>,

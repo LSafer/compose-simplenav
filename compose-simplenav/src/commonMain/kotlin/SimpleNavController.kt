@@ -5,7 +5,7 @@ import androidx.compose.runtime.getValue
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 
-abstract class SimpleNavController<T : Any> {
+abstract class SimpleNavController<T> {
     /**
      * The current navigation state. Snapshot.
      */
@@ -45,15 +45,15 @@ abstract class SimpleNavController<T : Any> {
     fun replace(transform: (T) -> T) = navigate(replace = true, inherit = false, transform)
     fun replaceInherit(transform: (T) -> T) = navigate(replace = true, inherit = true, transform)
 
-    abstract fun <U : Any> tangent(
+    abstract fun <U> tangent(
         name: String,
         default: U,
         serializer: KSerializer<U>,
     ): SimpleNavController<U>
 
-    inline fun <reified U : Any> tangent(name: String, default: U) =
+    inline fun <reified U> tangent(name: String, default: U) =
         tangent(name, default, serializer<U>())
 
-    inline fun <reified U : Any> tangent(default: U) =
+    inline fun <reified U> tangent(default: U) =
         tangent(U::class.simpleName.orEmpty(), default, serializer<U>())
 }

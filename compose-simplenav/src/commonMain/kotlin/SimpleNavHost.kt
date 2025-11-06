@@ -29,7 +29,7 @@ class NavHostScope<T> {
 }
 
 @Composable
-fun <T : Any> SimpleNavHost(
+fun <T> SimpleNavHost(
     navCtrl: SimpleNavController<T>,
     block: NavHostScope<T>.() -> Unit
 ) {

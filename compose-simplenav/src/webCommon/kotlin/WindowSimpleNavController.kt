@@ -14,18 +14,18 @@ import net.lsafer.compose.simplenav.internal.serializeToJsonString
 import org.w3c.dom.HashChangeEvent
 import org.w3c.dom.events.Event
 
-inline fun <reified T : Any> WindowSimpleNavController(
+inline fun <reified T> WindowSimpleNavController(
     default: T,
     tangents: Map<String, String> = emptyMap()
 ) = WindowSimpleNavController(SimpleNavState(default, tangents))
 
-inline fun <reified T : Any> WindowSimpleNavController(
+inline fun <reified T> WindowSimpleNavController(
     initialState: SimpleNavState<T>,
 ): WindowSimpleNavController<T> {
     return WindowSimpleNavController(initialState, serializer())
 }
 
-fun <T : Any> WindowSimpleNavController(
+fun <T> WindowSimpleNavController(
     initialState: SimpleNavState<T>,
     serializer: KSerializer<T>,
 ): WindowSimpleNavController<T> {
@@ -35,7 +35,7 @@ fun <T : Any> WindowSimpleNavController(
     )
 }
 
-sealed class WindowSimpleNavController<T : Any> : SimpleNavController<T>() {
+sealed class WindowSimpleNavController<T> : SimpleNavController<T>() {
     companion object {
         var globalIsInstalled by mutableStateOf(false)
     }
@@ -71,7 +71,7 @@ sealed class WindowSimpleNavController<T : Any> : SimpleNavController<T>() {
         return true
     }
 
-    override fun <U : Any> tangent(
+    override fun <U> tangent(
         name: String,
         default: U,
         serializer: KSerializer<U>,
@@ -85,7 +85,7 @@ sealed class WindowSimpleNavController<T : Any> : SimpleNavController<T>() {
     }
 }
 
-internal class WindowSimpleNavControllerImpl<T : Any>(
+internal class WindowSimpleNavControllerImpl<T>(
     initialState: SimpleNavState<T>,
     private val stateSerializer: KSerializer<SimpleNavState<T>>,
 ) : WindowSimpleNavController<T>() {
@@ -167,7 +167,7 @@ internal class WindowSimpleNavControllerImpl<T : Any>(
     }
 }
 
-internal class WindowSimpleNavControllerTangent<T : Any, U : Any>(
+internal class WindowSimpleNavControllerTangent<T, U>(
     private val outer: WindowSimpleNavController<T>,
     private val name: String,
     private val defaultState: SimpleNavState<U>,
