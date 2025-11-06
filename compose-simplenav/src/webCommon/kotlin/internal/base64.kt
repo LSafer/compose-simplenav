@@ -1,40 +1,19 @@
 package net.lsafer.compose.simplenav.internal
 
-import kotlin.coroutines.cancellation.CancellationException
-
-private external fun atob(input: String): String
-private external fun btoa(input: String): String
-
-private fun atobUrlSafe(input: String): String {
-    val base64 = base64UrlSafeToBase64(input)
-    return atob(base64)
-}
-
-private fun btoaUrlSafe(input: String): String {
-    val base64 = btoa(input)
-    return base64ToBase64UrlSafe(base64)
-}
-
-private fun base64UrlSafeToBase64(base64UrlSafe: String): String {
-    return base64UrlSafe.replace("-", "+").replace("_", "/")
-}
-
-private fun base64ToBase64UrlSafe(base64: String): String {
-    return base64.replace("+", "-").replace("/", "_")
-}
+import kotlinx.browser.window
 
 @PublishedApi
 internal fun String.encodeBase64UrlSafe(): String {
-    return btoaUrlSafe(this)
+    val str = this
+    val b64 = window.btoa(str)
+    val b64u = b64.replace("+", "-").replace("/", "_")
+    return b64u
 }
 
 @PublishedApi
 internal fun String.decodeBase64UrlSafeToStringOrNull(): String? {
-    return try {
-        atobUrlSafe(this)
-    } catch (e: CancellationException) {
-        throw e
-    } catch (_: Throwable) {
-        null
-    }
+    val b64u = this
+    val b64 = b64u.replace("-", "+").replace("_", "/")
+    val str = runCatching { window.atob(b64) }.getOrElse { return null }
+    return str
 }
