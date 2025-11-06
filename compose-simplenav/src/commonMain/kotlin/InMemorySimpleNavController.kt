@@ -20,24 +20,23 @@ abstract class InMemorySimpleNavController<T : Any> : SimpleNavController<T>() {
     internal abstract val lock: SynchronizedObject
     internal abstract fun internalSetState(newState: SimpleNavState<T>, replace: Boolean)
 
-    override fun push(route: T): Boolean {
+    override fun navigate(
+        route: T,
+        replace: Boolean,
+        inherit: Boolean,
+    ): Boolean {
         synchronized(lock) {
-            if (route == state.route)
+            val current = state
+
+            if (route == current.route)
                 return false
 
-            val newState = SimpleNavState(route)
-            internalSetState(newState, replace = false)
-        }
-        return true
-    }
+            val newState = when {
+                inherit -> current.copy(route = route)
+                else -> SimpleNavState(route)
+            }
 
-    override fun replace(route: T): Boolean {
-        synchronized(lock) {
-            if (route == state.route)
-                return false
-
-            val newState = SimpleNavState(route)
-            internalSetState(newState, replace = true)
+            internalSetState(newState, replace)
         }
         return true
     }
