@@ -131,7 +131,9 @@ internal class WindowSimpleNavControllerImpl<T>(
         isInstalled = true
 
         // initial [window.location.hash] => [navController]
-        val initialState = window.location.hash.decodeHashOrNull()
+        val initialState = window.location.hash
+            .substringAfterLast("#")
+            .decodeHashOrNull()
 
         if (initialState != null)
             state = initialState
