@@ -23,6 +23,7 @@ abstract class SimpleNavController<T> {
     abstract fun navigate(
         replace: Boolean = false,
         inherit: Boolean = false,
+        force: Boolean = false,
         transform: (T) -> T,
     ): Boolean
 
@@ -30,21 +31,37 @@ abstract class SimpleNavController<T> {
         route: T,
         replace: Boolean = false,
         inherit: Boolean = false,
+        force: Boolean = false,
     ): Boolean = navigate(
         replace = replace,
         inherit = inherit,
+        force = force,
         transform = { route },
     )
 
-    fun push(route: T) = navigate(route, replace = false, inherit = false)
-    fun pushInherit(route: T) = navigate(route, replace = false, inherit = true)
-    fun replace(route: T) = navigate(route, replace = true, inherit = false)
-    fun replaceInherit(route: T) = navigate(route, replace = true, inherit = true)
+    fun push(route: T, force: Boolean = false) =
+        navigate(route, replace = false, inherit = false, force = force)
 
-    fun push(transform: (T) -> T) = navigate(replace = false, inherit = false, transform)
-    fun pushInherit(transform: (T) -> T) = navigate(replace = false, inherit = true, transform)
-    fun replace(transform: (T) -> T) = navigate(replace = true, inherit = false, transform)
-    fun replaceInherit(transform: (T) -> T) = navigate(replace = true, inherit = true, transform)
+    fun pushInherit(route: T, force: Boolean = false) =
+        navigate(route, replace = false, inherit = true, force = force)
+
+    fun replace(route: T, force: Boolean = false) =
+        navigate(route, replace = true, inherit = false, force = force)
+
+    fun replaceInherit(route: T, force: Boolean = false) =
+        navigate(route, replace = true, inherit = true, force = force)
+
+    fun push(force: Boolean = false, transform: (T) -> T) =
+        navigate(replace = false, inherit = false, force = force, transform)
+
+    fun pushInherit(force: Boolean = false, transform: (T) -> T) =
+        navigate(replace = false, inherit = true, force = force, transform)
+
+    fun replace(force: Boolean = false, transform: (T) -> T) =
+        navigate(replace = true, inherit = false, force = force, transform)
+
+    fun replaceInherit(force: Boolean = false, transform: (T) -> T) =
+        navigate(replace = true, inherit = true, force = force, transform)
 
     abstract fun <U> tangent(
         name: String,

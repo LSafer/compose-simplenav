@@ -30,13 +30,14 @@ sealed class InMemorySimpleNavController<T> : SimpleNavController<T>() {
     override fun navigate(
         replace: Boolean,
         inherit: Boolean,
+        force: Boolean,
         transform: (T) -> T,
     ): Boolean {
         synchronized(lock) {
             val current = state
             val newRoute = transform(current.route)
 
-            if (newRoute == current.route)
+            if (!force && newRoute == current.route)
                 return false
 
             val newState = when {
