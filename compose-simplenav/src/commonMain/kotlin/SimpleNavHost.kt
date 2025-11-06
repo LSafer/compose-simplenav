@@ -15,7 +15,15 @@ class NavHostScope<T> {
         mappings += NavHostEntry(condition, content)
     }
 
+    fun entryScope(condition: (T) -> Boolean, content: @Composable T.() -> Unit) {
+        mappings += NavHostEntry(condition, content)
+    }
+
     inline fun <reified U : T> entry(crossinline content: @Composable (U) -> Unit) {
+        entry({ it is U }, { content(it as U) })
+    }
+
+    inline fun <reified U : T> entryScope(crossinline content: @Composable U.() -> Unit) {
         entry({ it is U }, { content(it as U) })
     }
 
@@ -23,7 +31,15 @@ class NavHostScope<T> {
         entry({ it == value }, { content(it) })
     }
 
+    fun entryScope(value: T, content: @Composable T.() -> Unit) {
+        entry({ it == value }, { content(it) })
+    }
+
     fun default(content: @Composable (T) -> Unit) {
+        default = content
+    }
+
+    fun defaultScope(content: @Composable T.() -> Unit) {
         default = content
     }
 }
