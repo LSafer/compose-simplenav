@@ -6,26 +6,26 @@ import kotlinx.atomicfu.locks.synchronized
 import kotlinx.serialization.KSerializer
 import kotlin.jvm.JvmName
 
-fun <T : Any> InMemorySimpleNavController(
+fun <T : Any> InMemoryNavController(
     default: T,
     tangents: Map<String, String> = emptyMap(),
-) = InMemorySimpleNavController(SimpleNavState(default, tangents))
+) = InMemoryNavController(NavState(default, tangents))
 
-@JvmName("InMemorySimpleNavController_nullable")
-fun <T> InMemorySimpleNavController(
+@JvmName("InMemoryNavController_nullable")
+fun <T> InMemoryNavController(
     default: T? = null,
     tangents: Map<String, String> = emptyMap(),
-) = InMemorySimpleNavController(SimpleNavState(default, tangents))
+) = InMemoryNavController(NavState(default, tangents))
 
-fun <T> InMemorySimpleNavController(
-    initialState: SimpleNavState<T>
-): InMemorySimpleNavController<T> {
-    return InMemorySimpleNavControllerImpl(initialState)
+fun <T> InMemoryNavController(
+    initialState: NavState<T>
+): InMemoryNavController<T> {
+    return InMemoryNavControllerImpl(initialState)
 }
 
-sealed class InMemorySimpleNavController<T> : SimpleNavController<T>() {
+sealed class InMemoryNavController<T> : NavController<T>() {
     internal abstract val lock: SynchronizedObject
-    internal abstract fun internalSetState(newState: SimpleNavState<T>, replace: Boolean)
+    internal abstract fun internalSetState(newState: NavState<T>, replace: Boolean)
 
     override fun navigate(
         replace: Boolean,
@@ -42,7 +42,7 @@ sealed class InMemorySimpleNavController<T> : SimpleNavController<T>() {
 
             val newState = when {
                 inherit -> current.copy(route = newRoute)
-                else -> SimpleNavState(newRoute)
+                else -> NavState(newRoute)
             }
 
             internalSetState(newState, replace)
@@ -54,22 +54,22 @@ sealed class InMemorySimpleNavController<T> : SimpleNavController<T>() {
         name: String,
         default: U,
         serializer: KSerializer<U>,
-    ): InMemorySimpleNavController<U> {
-        return InMemorySimpleNavControllerTangent(
+    ): InMemoryNavController<U> {
+        return InMemoryNavControllerTangent(
             outer = this,
             name = name,
-            defaultState = SimpleNavState(default),
-            stateSerializer = SimpleNavState.serializer(serializer),
+            defaultState = NavState(default),
+            stateSerializer = NavState.serializer(serializer),
         )
     }
 }
 
-internal class InMemorySimpleNavControllerImpl<T>(
-    initialState: SimpleNavState<T>,
-) : InMemorySimpleNavController<T>() {
+internal class InMemoryNavControllerImpl<T>(
+    initialState: NavState<T>,
+) : InMemoryNavController<T>() {
     override val lock = SynchronizedObject()
 
-    private val stateList = mutableStateListOf<SimpleNavState<T>>(initialState)
+    private val stateList = mutableStateListOf<NavState<T>>(initialState)
     private var position by mutableStateOf(0)
 
     override val state by derivedStateOf { stateList[position] }
@@ -94,7 +94,7 @@ internal class InMemorySimpleNavControllerImpl<T>(
         return true
     }
 
-    override fun internalSetState(newState: SimpleNavState<T>, replace: Boolean) {
+    override fun internalSetState(newState: NavState<T>, replace: Boolean) {
         if (replace) {
             stateList.removeRange(position + 1, stateList.size)
             stateList[position] = newState
@@ -106,12 +106,12 @@ internal class InMemorySimpleNavControllerImpl<T>(
     }
 }
 
-internal class InMemorySimpleNavControllerTangent<T, U>(
-    private val outer: InMemorySimpleNavController<T>,
+internal class InMemoryNavControllerTangent<T, U>(
+    private val outer: InMemoryNavController<T>,
     private val name: String,
-    private val defaultState: SimpleNavState<U>,
-    private val stateSerializer: KSerializer<SimpleNavState<U>>,
-) : InMemorySimpleNavController<U>() {
+    private val defaultState: NavState<U>,
+    private val stateSerializer: KSerializer<NavState<U>>,
+) : InMemoryNavController<U>() {
     override val lock = outer.lock
     override val state by derivedStateOf {
         outer.state.getTangent(name, stateSerializer)
@@ -121,7 +121,7 @@ internal class InMemorySimpleNavControllerTangent<T, U>(
     override fun back() = outer.back()
     override fun forward() = outer.forward()
 
-    override fun internalSetState(newState: SimpleNavState<U>, replace: Boolean) {
+    override fun internalSetState(newState: NavState<U>, replace: Boolean) {
         val newOuterState = outer.state.withTangent(
             name = name,
             value = newState,

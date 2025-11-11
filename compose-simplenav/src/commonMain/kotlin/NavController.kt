@@ -6,11 +6,11 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 import kotlin.jvm.JvmName
 
-abstract class SimpleNavController<T> {
+abstract class NavController<T> {
     /**
      * The current navigation state. Snapshot.
      */
-    abstract val state: SimpleNavState<T>
+    abstract val state: NavState<T>
 
     /**
      * The current route. Snapshot.
@@ -67,7 +67,7 @@ abstract class SimpleNavController<T> {
         name: String,
         default: U,
         serializer: KSerializer<U>,
-    ): SimpleNavController<U>
+    ): NavController<U>
 
     inline fun <reified U : Any> tangent(name: String, default: U) =
         tangent(name, default, serializer<U>())

@@ -45,8 +45,8 @@ class NavHostScope<T> {
 }
 
 @Composable
-fun <T> SimpleNavHost(
-    navCtrl: SimpleNavController<T>,
+fun <T> NavHost(
+    navCtrl: NavController<T>,
     block: NavHostScope<T>.() -> Unit
 ) {
     val scope = NavHostScope<T>().apply(block)
@@ -65,7 +65,7 @@ fun <T> SimpleNavHost(
 // using the U : T shenanigan here due to this:
 // https://youtrack.jetbrains.com/issue/KT-81365/Overload-resolution-ambiguity-between-candidates
 @Composable
-fun <T, U : T> SimpleNavHost(
+fun <T, U : T> NavHost(
     current: T,
     block: NavHostScope<U>.() -> Unit
 ) {

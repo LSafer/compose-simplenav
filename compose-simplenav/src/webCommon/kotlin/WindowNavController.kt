@@ -15,34 +15,34 @@ import org.w3c.dom.HashChangeEvent
 import org.w3c.dom.events.Event
 import kotlin.jvm.JvmName
 
-inline fun <reified T : Any> WindowSimpleNavController(
+inline fun <reified T : Any> WindowNavController(
     default: T,
     tangents: Map<String, String> = emptyMap()
-) = WindowSimpleNavController(SimpleNavState(default, tangents))
+) = WindowNavController(NavState(default, tangents))
 
-@JvmName("WindowSimpleNavController_nullable")
-inline fun <reified T> WindowSimpleNavController(
+@JvmName("WindowNavController_nullable")
+inline fun <reified T> WindowNavController(
     default: T? = null,
     tangents: Map<String, String> = emptyMap()
-) = WindowSimpleNavController(SimpleNavState(default, tangents))
+) = WindowNavController(NavState(default, tangents))
 
-inline fun <reified T> WindowSimpleNavController(
-    initialState: SimpleNavState<T>,
-): WindowSimpleNavController<T> {
-    return WindowSimpleNavController(initialState, serializer())
+inline fun <reified T> WindowNavController(
+    initialState: NavState<T>,
+): WindowNavController<T> {
+    return WindowNavController(initialState, serializer())
 }
 
-fun <T> WindowSimpleNavController(
-    initialState: SimpleNavState<T>,
+fun <T> WindowNavController(
+    initialState: NavState<T>,
     serializer: KSerializer<T>,
-): WindowSimpleNavController<T> {
-    return WindowSimpleNavControllerImpl(
+): WindowNavController<T> {
+    return WindowNavControllerImpl(
         initialState = initialState,
-        stateSerializer = SimpleNavState.serializer(serializer),
+        stateSerializer = NavState.serializer(serializer),
     )
 }
 
-sealed class WindowSimpleNavController<T> : SimpleNavController<T>() {
+sealed class WindowNavController<T> : NavController<T>() {
     companion object {
         var globalIsInstalled by mutableStateOf(false)
     }
@@ -55,7 +55,7 @@ sealed class WindowSimpleNavController<T> : SimpleNavController<T>() {
     fun tryGlobalInstall() = if (globalIsInstalled) false else run { globalInstall(); true }
     fun tryGlobalUninstall() = if (!isInstalled) false else run { globalUnInstall(); true }
 
-    internal abstract fun internalSetState(newState: SimpleNavState<T>, replace: Boolean)
+    internal abstract fun internalSetState(newState: NavState<T>, replace: Boolean)
 
     override fun navigate(
         replace: Boolean,
@@ -72,7 +72,7 @@ sealed class WindowSimpleNavController<T> : SimpleNavController<T>() {
 
         val newState = when {
             inherit -> current.copy(route = newRoute)
-            else -> SimpleNavState(newRoute)
+            else -> NavState(newRoute)
         }
 
         internalSetState(newState, replace)
@@ -83,20 +83,20 @@ sealed class WindowSimpleNavController<T> : SimpleNavController<T>() {
         name: String,
         default: U,
         serializer: KSerializer<U>,
-    ): WindowSimpleNavController<U> {
-        return WindowSimpleNavControllerTangent(
+    ): WindowNavController<U> {
+        return WindowNavControllerTangent(
             outer = this,
             name = name,
-            defaultState = SimpleNavState(default),
-            stateSerializer = SimpleNavState.serializer(serializer),
+            defaultState = NavState(default),
+            stateSerializer = NavState.serializer(serializer),
         )
     }
 }
 
-internal class WindowSimpleNavControllerImpl<T>(
-    initialState: SimpleNavState<T>,
-    private val stateSerializer: KSerializer<SimpleNavState<T>>,
-) : WindowSimpleNavController<T>() {
+internal class WindowNavControllerImpl<T>(
+    initialState: NavState<T>,
+    private val stateSerializer: KSerializer<NavState<T>>,
+) : WindowNavController<T>() {
     override var isInstalled by mutableStateOf(false)
         private set
     override var state by mutableStateOf(initialState)
@@ -114,12 +114,12 @@ internal class WindowSimpleNavControllerImpl<T>(
             state = newState
     }
 
-    private fun SimpleNavState<T>.encodeHash(): String {
+    private fun NavState<T>.encodeHash(): String {
         return serializeToJsonString(stateSerializer)
             .encodeBase64UrlSafe()
     }
 
-    private fun String.decodeHashOrNull(): SimpleNavState<T>? {
+    private fun String.decodeHashOrNull(): NavState<T>? {
         return decodeBase64UrlSafeToStringOrNull()
             ?.deserializeJsonOrNull(stateSerializer)
     }
@@ -166,7 +166,7 @@ internal class WindowSimpleNavControllerImpl<T>(
         return true
     }
 
-    override fun internalSetState(newState: SimpleNavState<T>, replace: Boolean) {
+    override fun internalSetState(newState: NavState<T>, replace: Boolean) {
         if (replace) {
             state = newState
             window.location.replace("#${newState.encodeHash()}")
@@ -177,12 +177,12 @@ internal class WindowSimpleNavControllerImpl<T>(
     }
 }
 
-internal class WindowSimpleNavControllerTangent<T, U>(
-    private val outer: WindowSimpleNavController<T>,
+internal class WindowNavControllerTangent<T, U>(
+    private val outer: WindowNavController<T>,
     private val name: String,
-    private val defaultState: SimpleNavState<U>,
-    private val stateSerializer: KSerializer<SimpleNavState<U>>,
-) : WindowSimpleNavController<U>() {
+    private val defaultState: NavState<U>,
+    private val stateSerializer: KSerializer<NavState<U>>,
+) : WindowNavController<U>() {
     override val isInstalled get() = outer.isInstalled
     override val state by derivedStateOf {
         outer.state.getTangent(name, stateSerializer)
@@ -194,7 +194,7 @@ internal class WindowSimpleNavControllerTangent<T, U>(
     override fun back() = outer.back()
     override fun forward() = outer.forward()
 
-    override fun internalSetState(newState: SimpleNavState<U>, replace: Boolean) {
+    override fun internalSetState(newState: NavState<U>, replace: Boolean) {
         val newOuterState = outer.state.withTangent(
             name = name,
             value = newState,
