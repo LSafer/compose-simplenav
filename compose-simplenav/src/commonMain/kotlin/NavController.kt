@@ -4,7 +4,9 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
+import net.lsafer.compose.simplenav.internal.inferTangentName
 import kotlin.jvm.JvmName
+import kotlin.reflect.typeOf
 
 abstract class NavController<T> {
     /**
@@ -73,7 +75,7 @@ abstract class NavController<T> {
         tangent(name, default, serializer<U>())
 
     inline fun <reified U : Any> tangent(default: U) =
-        tangent(U::class.simpleName.orEmpty(), default, serializer<U>())
+        tangent(typeOf<U>().inferTangentName(), default, serializer<U>())
 
     @JvmName("tangent_nullable")
     inline fun <reified U> tangent(name: String, default: U? = null) =
@@ -81,5 +83,5 @@ abstract class NavController<T> {
 
     @JvmName("tangent_nullable")
     inline fun <reified U> tangent(default: U? = null) =
-        tangent(U::class.simpleName.orEmpty(), default, serializer<U?>())
+        tangent(typeOf<U>().inferTangentName(), default, serializer<U?>())
 }
