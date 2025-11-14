@@ -7,10 +7,7 @@ import androidx.compose.runtime.setValue
 import kotlinx.browser.window
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
-import net.lsafer.compose.simplenav.internal.decodeBase64UrlSafeToStringOrNull
-import net.lsafer.compose.simplenav.internal.deserializeJsonOrNull
-import net.lsafer.compose.simplenav.internal.encodeBase64UrlSafe
-import net.lsafer.compose.simplenav.internal.serializeToJsonString
+import net.lsafer.compose.simplenav.internal.*
 import org.w3c.dom.HashChangeEvent
 import org.w3c.dom.events.Event
 import kotlin.jvm.JvmName
@@ -102,6 +99,11 @@ internal class WindowNavControllerImpl<T>(
     override var state by mutableStateOf(initialState)
         private set
 
+    override var length: Int by mutableStateOf(1)
+        private set
+    override var currentIndex: Int by mutableStateOf(0)
+        private set
+
     private val hashchangeListener = { event: Event ->
         @Suppress("USELESS_CAST")
         event as HashChangeEvent
@@ -112,6 +114,11 @@ internal class WindowNavControllerImpl<T>(
 
         if (newState != null)
             state = newState
+
+        if (windowNavigationSupported()) {
+            length = windowNavigationEntriesLength() ?: 1
+            currentIndex = windowNavigationCurrentEntryIndex() ?: 0
+        }
     }
 
     private fun NavState<T>.encodeHash(): String {
@@ -138,6 +145,11 @@ internal class WindowNavControllerImpl<T>(
         if (initialState != null)
             state = initialState
 
+        if (windowNavigationSupported()) {
+            length = windowNavigationEntriesLength() ?: 1
+            currentIndex = windowNavigationCurrentEntryIndex() ?: 0
+        }
+
         // initial [navController] => [window.location.hash]
         window.location.replace("#${state.encodeHash()}")
 
@@ -150,20 +162,42 @@ internal class WindowNavControllerImpl<T>(
 
         window.removeEventListener("hashchange", hashchangeListener)
 
+        if (windowNavigationSupported()) {
+            length = 1
+            currentIndex = 0
+        }
+
         isInstalled = false
         globalIsInstalled = false
     }
 
     override fun back(): Boolean {
         require(isInstalled) { "NavController not installed" }
+        if (!canGoBack) return false
         window.history.back()
         return true
     }
 
     override fun forward(): Boolean {
         require(isInstalled) { "NavController not installed" }
+        if (!canGoForward) return false
         window.history.forward()
         return true
+    }
+
+    override fun go(delta: Int) {
+        require(isInstalled) { "NavController not installed" }
+        if (delta == 0) return
+        if (delta > 0) {
+            if (currentIndex == lastIndex) return
+            val d = minOf(delta, lastIndex - currentIndex)
+            window.history.go(d)
+        }
+        if (delta < 0) {
+            if (currentIndex == 0) return
+            val d = maxOf(delta, -currentIndex)
+            window.history.go(d)
+        }
     }
 
     override fun internalSetState(newState: NavState<T>, replace: Boolean) {
@@ -189,10 +223,14 @@ internal class WindowNavControllerTangent<T, U>(
             ?: defaultState
     }
 
+    override val length get() = outer.length
+    override val currentIndex get() = outer.currentIndex
+
     override fun globalInstall() = outer.globalInstall()
     override fun globalUnInstall() = outer.globalUnInstall()
     override fun back() = outer.back()
     override fun forward() = outer.forward()
+    override fun go(delta: Int) = outer.go(delta)
 
     override fun internalSetState(newState: NavState<U>, replace: Boolean) {
         val newOuterState = outer.state.withTangent(

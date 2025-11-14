@@ -74,6 +74,9 @@ internal class InMemoryNavControllerImpl<T>(
 
     override val state by derivedStateOf { stateList[position] }
 
+    override val length get() = stateList.size
+    override val currentIndex get() = position
+
     override fun back(): Boolean {
         synchronized(lock) {
             if (position <= 0)
@@ -92,6 +95,22 @@ internal class InMemoryNavControllerImpl<T>(
             position++
         }
         return true
+    }
+
+    override fun go(delta: Int) {
+        synchronized(lock) {
+            if (delta == 0) return
+            if (delta > 0) {
+                if (currentIndex == lastIndex) return
+                val d = minOf(delta, lastIndex - currentIndex)
+                position += d
+            }
+            if (delta < 0) {
+                if (currentIndex == 0) return
+                val d = maxOf(delta, -currentIndex)
+                position += d
+            }
+        }
     }
 
     override fun internalSetState(newState: NavState<T>, replace: Boolean) {
@@ -118,8 +137,12 @@ internal class InMemoryNavControllerTangent<T, U>(
             ?: defaultState
     }
 
+    override val length get() = outer.length
+    override val currentIndex get() = outer.currentIndex
+
     override fun back() = outer.back()
     override fun forward() = outer.forward()
+    override fun go(delta: Int) = outer.go(delta)
 
     override fun internalSetState(newState: NavState<U>, replace: Boolean) {
         val newOuterState = outer.state.withTangent(

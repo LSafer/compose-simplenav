@@ -19,8 +19,20 @@ abstract class NavController<T> {
      */
     val current by derivedStateOf { state.route }
 
+    abstract val length: Int
+    abstract val currentIndex: Int
+
+    val lastIndex get() = length - 1
+    val canGoBack get() = currentIndex > 0
+    val canGoForward get() = currentIndex < lastIndex
+
     abstract fun back(): Boolean
     abstract fun forward(): Boolean
+    abstract fun go(delta: Int)
+
+    fun goTo(index: Int) = go(index - currentIndex)
+    fun goToFirst() = go(-currentIndex)
+    fun goToLast() = go(lastIndex - currentIndex)
 
     abstract fun navigate(
         replace: Boolean = false,
