@@ -34,24 +34,50 @@ abstract class NavController<T> {
     fun goToFirst() = go(-currentIndex)
     fun goToLast() = go(lastIndex - currentIndex)
 
-    abstract fun navigate(
+    abstract fun edit(
+        replace: Boolean = true,
+        transform: (NavState<T>) -> NavState<T>?,
+    ): Boolean
+
+    fun navigate(
         replace: Boolean = false,
         inherit: Boolean = true,
         force: Boolean = false,
-        transform: (T) -> T,
-    ): Boolean
+        transform: (T) -> T
+    ): Boolean {
+        return edit(replace = replace) { current ->
+            val newRoute = transform(current.route)
+
+            if (!force && newRoute == current.route)
+                return@edit null
+
+            val newState = when {
+                inherit -> current.copy(route = newRoute)
+                else -> NavState(newRoute)
+            }
+
+            return@edit newState
+        }
+    }
 
     fun navigate(
         route: T,
         replace: Boolean = false,
         inherit: Boolean = true,
         force: Boolean = false,
-    ): Boolean = navigate(
-        replace = replace,
-        inherit = inherit,
-        force = force,
-        transform = { route },
-    )
+    ): Boolean {
+        return edit(replace = replace) { current ->
+            if (!force && route == current.route)
+                return@edit null
+
+            val newState = when {
+                inherit -> current.copy(route = route)
+                else -> NavState(route)
+            }
+
+            return@edit newState
+        }
+    }
 
     fun push(route: T, inherit: Boolean = true, force: Boolean = false) =
         navigate(route, replace = false, inherit = inherit, force = force)
@@ -65,11 +91,8 @@ abstract class NavController<T> {
     fun replace(inherit: Boolean = true, force: Boolean = false, transform: (T) -> T) =
         navigate(replace = true, inherit = inherit, force = force, transform)
 
-    abstract fun <U> tangent(
-        name: String,
-        default: U,
-        serializer: KSerializer<U>,
-    ): NavController<U>
+    fun <U> tangent(name: String, default: U, serializer: KSerializer<U>): NavController<U> =
+        TangentNavController(this, name, default, serializer)
 
     inline fun <reified U : Any> tangent(name: String, default: U) =
         tangent(name, default, serializer<U>())
