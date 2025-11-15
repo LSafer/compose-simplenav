@@ -5,32 +5,41 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.browser.window
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.StringFormat
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
-import net.lsafer.compose.simplenav.internal.*
+import net.lsafer.compose.simplenav.NavState.Companion.toUrlSafeString
+import net.lsafer.compose.simplenav.internal.windowNavigationCurrentEntryIndex
+import net.lsafer.compose.simplenav.internal.windowNavigationEntriesLength
+import net.lsafer.compose.simplenav.internal.windowNavigationSupported
 import org.w3c.dom.HashChangeEvent
 import org.w3c.dom.events.Event
 import kotlin.jvm.JvmName
 
 inline fun <reified T : Any> WindowNavController(
     default: T,
-    tangents: Map<String, NavState<String>> = emptyMap()
-) = WindowNavController(NavState(default, tangents))
+    tangents: Map<String, NavState<String>> = emptyMap(),
+    format: StringFormat = Json,
+) = WindowNavController(NavState(default, tangents), format)
 
 @JvmName("WindowNavController_nullable")
 inline fun <reified T> WindowNavController(
     default: T? = null,
-    tangents: Map<String, NavState<String>> = emptyMap()
-) = WindowNavController(NavState(default, tangents))
+    tangents: Map<String, NavState<String>> = emptyMap(),
+    format: StringFormat = Json,
+) = WindowNavController(NavState(default, tangents), format)
 
 inline fun <reified T> WindowNavController(
     initialState: NavState<T>,
+    format: StringFormat = Json,
 ): WindowNavController<T> {
-    return WindowNavController(initialState, serializer<T>())
+    return WindowNavController(initialState, serializer<T>(), format)
 }
 
 class WindowNavController<T>(
     initialState: NavState<T>,
-    serializer: KSerializer<T>,
+    private val serializer: KSerializer<T>,
+    private val format: StringFormat = Json,
 ) : NavController<T>() {
     companion object {
         var globalIsInstalled by mutableStateOf(false)
@@ -38,8 +47,6 @@ class WindowNavController<T>(
 
     var isInstalled by mutableStateOf(false)
         private set
-
-    private val stateSerializer = NavState.serializer(serializer)
 
     override var state by mutableStateOf(initialState)
         private set
@@ -84,10 +91,10 @@ class WindowNavController<T>(
 
         if (replace) {
             state = newState
-            window.location.replace("#${newState.encodeHash()}")
+            window.location.replace("#${newState.toUrlSafeString(serializer, format)}")
         } else {
             state = newState
-            window.location.hash = newState.encodeHash()
+            window.location.hash = newState.toUrlSafeString(serializer, format)
         }
 
         return true
@@ -102,9 +109,11 @@ class WindowNavController<T>(
         isInstalled = true
 
         // initial [window.location.hash] => [navController]
-        val initialState = window.location.hash
-            .substringAfterLast("#")
-            .decodeHashOrNull()
+        val initialState = NavState.fromUrlSafeString(
+            window.location.hash.substringAfterLast("#"),
+            serializer = serializer,
+            format = format,
+        )
 
         if (initialState != null)
             state = initialState
@@ -115,7 +124,7 @@ class WindowNavController<T>(
         }
 
         // initial [navController] => [window.location.hash]
-        window.location.replace("#${state.encodeHash()}")
+        window.location.replace("#${state.toUrlSafeString(serializer, format)}")
 
         // collect [window.location.hash] => [navController]
         window.addEventListener("hashchange", hashchangeListener)
@@ -151,9 +160,11 @@ class WindowNavController<T>(
         @Suppress("USELESS_CAST")
         event as HashChangeEvent
 
-        val newState = event.newURL
-            .substringAfterLast("#")
-            .decodeHashOrNull()
+        val newState = NavState.fromUrlSafeString(
+            event.newURL.substringAfterLast("#"),
+            serializer = serializer,
+            format = format,
+        )
 
         if (newState != null)
             state = newState
@@ -162,15 +173,5 @@ class WindowNavController<T>(
             length = windowNavigationEntriesLength() ?: 1
             currentIndex = windowNavigationCurrentEntryIndex() ?: 0
         }
-    }
-
-    private fun NavState<T>.encodeHash(): String {
-        return serializeToJsonString(stateSerializer)
-            .encodeBase64UrlSafe()
-    }
-
-    private fun String.decodeHashOrNull(): NavState<T>? {
-        return decodeBase64UrlSafeToStringOrNull()
-            ?.deserializeJsonOrNull(stateSerializer)
     }
 }

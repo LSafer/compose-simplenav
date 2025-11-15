@@ -2,11 +2,6 @@ package net.lsafer.compose.simplenav
 
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.serializer
-import net.lsafer.compose.simplenav.internal.inferTangentName
-import kotlin.jvm.JvmName
-import kotlin.reflect.typeOf
 
 abstract class NavController<T> {
     /**
@@ -90,21 +85,4 @@ abstract class NavController<T> {
 
     fun replace(inherit: Boolean = true, force: Boolean = false, transform: (T) -> T) =
         navigate(replace = true, inherit = inherit, force = force, transform)
-
-    fun <U> tangent(name: String, default: U, serializer: KSerializer<U>): NavController<U> =
-        TangentNavController(this, name, default, serializer)
-
-    inline fun <reified U : Any> tangent(name: String, default: U) =
-        tangent(name, default, serializer<U>())
-
-    inline fun <reified U : Any> tangent(default: U) =
-        tangent(typeOf<U>().inferTangentName(), default, serializer<U>())
-
-    @JvmName("tangent_nullable")
-    inline fun <reified U> tangent(name: String, default: U? = null) =
-        tangent(name, default, serializer<U?>())
-
-    @JvmName("tangent_nullable")
-    inline fun <reified U> tangent(default: U? = null) =
-        tangent(typeOf<U>().inferTangentName(), default, serializer<U?>())
 }
