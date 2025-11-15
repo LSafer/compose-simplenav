@@ -36,6 +36,19 @@ inline fun <reified T> WindowNavController(
     return WindowNavController(initialState, serializer<T>(), format)
 }
 
+/**
+ * Navigation controller backed by the browser's hash and history APIs.
+ *
+ * Features:
+ * - Synchronizes with window.location.hash
+ * - Supports browser back/forward buttons
+ * - Serializes NavState to Base64-encoded JSON inside the hash
+ *
+ * Requires calling [globalInstall] to bind to browser events.
+ *
+ * Limitations:
+ * - Only one WindowNavController may be globally installed at a time
+ */
 class WindowNavController<T>(
     initialState: NavState<T>,
     private val serializer: KSerializer<T>,
@@ -102,6 +115,13 @@ class WindowNavController<T>(
 
     // ========== BROWSER WINDOW API INTEGRATION ==========
 
+    /**
+     * Installs this controller as the globally active browser navigation handler.
+     *
+     * - Loads initial state from window.location.hash
+     * - Writes initial hash based on internal state
+     * - Listens to hashchange events
+     */
     fun globalInstall() {
         check(!globalIsInstalled) { "A NavController was already globally installed" }
 
@@ -130,6 +150,9 @@ class WindowNavController<T>(
         window.addEventListener("hashchange", hashchangeListener)
     }
 
+    /**
+     * Removes event listeners and resets internal indices.
+     */
     fun globalUnInstall() {
         check(isInstalled) { "NavController is not globally installed" }
 

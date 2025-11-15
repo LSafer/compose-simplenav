@@ -27,6 +27,23 @@ inline fun <reified U> NavController<*>.tangent(name: String, default: U? = null
 inline fun <reified U> NavController<*>.tangent(default: U? = null, format: StringFormat = Json) =
     tangent(typeOf<U>().inferTangentName(), default, serializer<U?>(), format)
 
+/**
+ * A proxy NavController that exposes one tangent inside a parent NavController.
+ *
+ * This acts like a small independent navigation controller but:
+ * - it shares history with its parent
+ * - its state is stored *inside* the parent's NavState
+ * - backward/forward navigation is delegated
+ *
+ * Tangents are ideal for parallel UI state:
+ * - selected tab
+ * - filters
+ * - currently expanded item
+ * - map camera position
+ *
+ * @param name unique identifier for the tangent
+ * @param default value to use when the tangent has not been created yet
+ */
 class TangentNavController<T>(
     outer: NavController<*>,
     private val name: String,

@@ -16,6 +16,14 @@ fun <T> InMemoryNavController(
     tangents: Map<String, NavState<String>> = emptyMap(),
 ) = InMemoryNavController(NavState(default, tangents))
 
+/**
+ * Simple in-memory navigation controller.
+ *
+ * This behaves like a browser history but without persistence.
+ * It is suitable for Compose Desktop, tests, previews, and headless logic.
+ *
+ * All operations are thread-safe via an atomicfu SynchronizedObject.
+ */
 class InMemoryNavController<T>(
     initialState: NavState<T>,
 ) : NavController<T>() {

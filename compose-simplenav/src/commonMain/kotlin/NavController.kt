@@ -3,14 +3,23 @@ package net.lsafer.compose.simplenav
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 
+/**
+ * A stack-like navigation controller inspired by browser navigation:
+ *
+ * - You can `push`, `replace`, `back`, `forward`, and `go(delta)`
+ * - Each entry stores a full [NavState], including tangent states
+ * - Implementations choose where state lives (memory, browser history, etc.)
+ *
+ * This controller supports *reactive* (Compose) API usage through snapshot state.
+ */
 abstract class NavController<T> {
     /**
-     * The current navigation state. Snapshot.
+     * The current full navigation state, including route and tangents.
      */
     abstract val state: NavState<T>
 
     /**
-     * The current route. Snapshot.
+     * The current route.
      */
     val current by derivedStateOf { state.route }
 
@@ -29,11 +38,30 @@ abstract class NavController<T> {
     fun goToFirst() = go(-currentIndex)
     fun goToLast() = go(lastIndex - currentIndex)
 
+    /**
+     * Edits the current NavState.
+     *
+     * This is the core primitive of navigation; everything else (push/replace/navigate)
+     * is implemented through this.
+     *
+     * @param replace if true, modifies the current entry instead of adding a new one. (false by default)
+     * @param transform transformation block, returning null cancels the edit.
+     * @return false, if [transform] returned null.
+     */
     abstract fun edit(
         replace: Boolean = true,
         transform: (NavState<T>) -> NavState<T>?,
     ): Boolean
 
+    /**
+     * Navigates to a new route produced by [transform], optionally replacing the
+     * current entry or inheriting its tangents.
+     *
+     * @param replace if true, modifies the current entry instead of adding a new one. (false by default)
+     * @param inherit if true, the new state inherits all tangents from the current state. (true by default)
+     * @param force if false, navigation is skipped when the transformed route is equal to the current route. (false by default)
+     * @return true, if navigation was performed.
+     */
     fun navigate(
         replace: Boolean = false,
         inherit: Boolean = true,
@@ -55,6 +83,15 @@ abstract class NavController<T> {
         }
     }
 
+    /**
+     * Navigates to a new route given as [route], optionally replacing the
+     * current entry or inheriting its tangents.
+     *
+     * @param replace if true, modifies the current entry instead of adding a new one. (false by default)
+     * @param inherit if true, the new state inherits all tangents from the current state. (true by default)
+     * @param force if false, navigation is skipped when the transformed route is equal to the current route. (false by default)
+     * @return true, if navigation was performed.
+     */
     fun navigate(
         route: T,
         replace: Boolean = false,
