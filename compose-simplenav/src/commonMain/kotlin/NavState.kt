@@ -9,6 +9,8 @@ import net.lsafer.compose.simplenav.internal.decodeFromStringOrNull
 import net.lsafer.compose.simplenav.internal.decodeOrNull
 import kotlin.io.encoding.Base64
 
+typealias NavTangentMap = Map<String, NavState<String>>
+
 /**
  * Represents a complete navigation entry consisting of:
  *
@@ -24,7 +26,7 @@ import kotlin.io.encoding.Base64
 @Serializable
 data class NavState<out T>(
     val route: T,
-    val tangents: Map<String, NavState<String>> = emptyMap(),
+    val tangents: NavTangentMap = emptyMap(),
 ) {
     /**
      * Retrieves the tangent state with the given [name].

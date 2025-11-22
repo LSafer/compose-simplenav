@@ -7,13 +7,13 @@ import kotlin.jvm.JvmName
 
 fun <T : Any> InMemoryNavController(
     default: T,
-    tangents: Map<String, NavState<String>> = emptyMap(),
+    tangents: NavTangentMap = emptyMap(),
 ) = InMemoryNavController(NavState(default, tangents))
 
 @JvmName("InMemoryNavController_nullable")
 fun <T> InMemoryNavController(
     default: T? = null,
-    tangents: Map<String, NavState<String>> = emptyMap(),
+    tangents: NavTangentMap = emptyMap(),
 ) = InMemoryNavController(NavState(default, tangents))
 
 /**

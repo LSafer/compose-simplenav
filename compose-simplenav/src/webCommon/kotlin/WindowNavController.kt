@@ -18,14 +18,14 @@ import kotlin.jvm.JvmName
 
 inline fun <reified T : Any> WindowNavController(
     default: T,
-    tangents: Map<String, NavState<String>> = emptyMap(),
+    tangents: NavTangentMap = emptyMap(),
     format: StringFormat = Json,
 ) = WindowNavController(NavState(default, tangents), format)
 
 @JvmName("WindowNavController_nullable")
 inline fun <reified T> WindowNavController(
     default: T? = null,
-    tangents: Map<String, NavState<String>> = emptyMap(),
+    tangents: NavTangentMap = emptyMap(),
     format: StringFormat = Json,
 ) = WindowNavController(NavState(default, tangents), format)
 
