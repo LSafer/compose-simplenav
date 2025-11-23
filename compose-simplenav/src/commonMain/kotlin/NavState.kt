@@ -40,11 +40,7 @@ data class NavState<out T>(
         serializer: KSerializer<U>,
         format: StringFormat = Json,
     ): NavState<U>? {
-        val rawState = tangents[name] ?: return null
-        return NavState(
-            format.decodeFromStringOrNull(serializer, rawState.route) ?: return null,
-            rawState.tangents,
-        )
+        return tangents[name]?.decoded(serializer, format)
     }
 
     /**
@@ -59,20 +55,36 @@ data class NavState<out T>(
         serializer: KSerializer<U>,
         format: StringFormat = Json,
     ): NavState<T> {
-        val rawState = NavState(
-            route = format.encodeToString(serializer, state.route),
-            tangents = state.tangents,
-        )
         return copy(
             route = route,
             tangents = buildMap {
                 putAll(tangents)
-                put(name, rawState)
+                put(name, state.encoded(serializer, format))
             }
         )
     }
 
     companion object {
+        fun <T> NavState<String>.decoded(
+            serializer: KSerializer<T>,
+            format: StringFormat = Json,
+        ): NavState<T>? {
+            return NavState(
+                format.decodeFromStringOrNull(serializer, route) ?: return null,
+                tangents,
+            )
+        }
+
+        fun <T> NavState<T>.encoded(
+            serializer: KSerializer<T>,
+            format: StringFormat = Json,
+        ): NavState<String> {
+            return NavState(
+                route = format.encodeToString(serializer, route),
+                tangents = tangents,
+            )
+        }
+
         /**
          * Decodes a URL-safe Base64 string back into a [NavState].
          *
