@@ -9,8 +9,8 @@ import kotlinx.serialization.StringFormat
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import net.lsafer.compose.simplenav.NavState.Companion.toUrlSafeString
+import net.lsafer.compose.simplenav.internal.buildWindowHistory
 import net.lsafer.compose.simplenav.internal.windowNavigationCurrentEntryIndex
-import net.lsafer.compose.simplenav.internal.windowNavigationEntriesLength
 import net.lsafer.compose.simplenav.internal.windowNavigationSupported
 import org.w3c.dom.HashChangeEvent
 import org.w3c.dom.events.Event
@@ -30,10 +30,10 @@ inline fun <reified T> WindowNavController(
 ) = WindowNavController(NavState(default, tangents), format)
 
 inline fun <reified T> WindowNavController(
-    initialState: NavState<T>,
+    defaultState: NavState<T>,
     format: StringFormat = Json,
 ): WindowNavController<T> {
-    return WindowNavController(initialState, serializer<T>(), format)
+    return WindowNavController(defaultState, serializer<T>(), format)
 }
 
 /**
@@ -50,20 +50,22 @@ inline fun <reified T> WindowNavController(
  * - Only one WindowNavController may be globally installed at a time
  */
 class WindowNavController<T>(
-    initialState: NavState<T>,
+    private val defaultState: NavState<T>,
     private val serializer: KSerializer<T>,
     private val format: StringFormat = Json,
 ) : NavController<T>() {
     companion object {
         var globalIsInstalled by mutableStateOf(false)
+            private set
     }
 
     var isInstalled by mutableStateOf(false)
         private set
 
-    override var state by mutableStateOf(initialState)
+    override var state by mutableStateOf(defaultState)
         private set
-    override var length: Int by mutableStateOf(1)
+
+    override var entries by mutableStateOf<List<NavState<T>>>(listOf(state))
         private set
     override var currentIndex: Int by mutableStateOf(0)
         private set
@@ -139,7 +141,7 @@ class WindowNavController<T>(
             state = initialState
 
         if (windowNavigationSupported()) {
-            length = windowNavigationEntriesLength() ?: 1
+            entries = buildWindowHistory(defaultState, serializer, format)
             currentIndex = windowNavigationCurrentEntryIndex() ?: 0
         }
 
@@ -159,7 +161,7 @@ class WindowNavController<T>(
         window.removeEventListener("hashchange", hashchangeListener)
 
         if (windowNavigationSupported()) {
-            length = 1
+            entries = listOf(state)
             currentIndex = 0
         }
 
@@ -193,7 +195,7 @@ class WindowNavController<T>(
             state = newState
 
         if (windowNavigationSupported()) {
-            length = windowNavigationEntriesLength() ?: 1
+            entries = buildWindowHistory(defaultState, serializer, format)
             currentIndex = windowNavigationCurrentEntryIndex() ?: 0
         }
     }

@@ -14,6 +14,16 @@ import androidx.compose.runtime.getValue
  */
 abstract class NavController<T> {
     /**
+     * The full list of entries in this controller.
+     */
+    abstract val entries: List<NavState<T>>
+
+    /**
+     * The index of the current entry.
+     */
+    abstract val currentIndex: Int
+
+    /**
      * The current full navigation state, including route and tangents.
      */
     abstract val state: NavState<T>
@@ -23,9 +33,7 @@ abstract class NavController<T> {
      */
     val current by derivedStateOf { state.route }
 
-    abstract val length: Int
-    abstract val currentIndex: Int
-
+    val length get() = entries.size
     val lastIndex get() = length - 1
     val canGoBack get() = currentIndex > 0
     val canGoForward get() = currentIndex < lastIndex

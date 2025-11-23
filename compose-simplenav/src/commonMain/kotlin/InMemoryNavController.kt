@@ -33,7 +33,7 @@ class InMemoryNavController<T>(
 
     override val state by derivedStateOf { stateList[position] }
 
-    override val length get() = stateList.size
+    override val entries get() = stateList.toList()
     override val currentIndex get() = position
 
     override fun back(): Boolean {

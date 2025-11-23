@@ -54,11 +54,14 @@ class TangentNavController<T>(
     @Suppress("UNCHECKED_CAST")
     private val outer = outer as NavController<Any?>
 
+    override val entries by derivedStateOf {
+        outer.entries.map { it.getTangent(name, default, serializer, format) }
+    }
+
     override val state by derivedStateOf {
         outer.state.getTangent(name, default, serializer, format)
     }
 
-    override val length get() = outer.length
     override val currentIndex get() = outer.currentIndex
 
     override fun back() = outer.back()
