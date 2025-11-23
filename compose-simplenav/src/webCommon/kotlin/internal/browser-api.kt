@@ -26,7 +26,7 @@ internal fun windowNavigationCurrentEntryIndex(): Int? =
     js("window.navigation.currentEntry.index")
 
 internal fun windowNavigationEntriesUrls(): JsArray<JsString> =
-    js("window.navigation.entries().map(it => it.url)")
+    js("window.navigation.entries().map(function(it) { return it.url })")
 
 @OptIn(ExperimentalWasmJsInterop::class)
 internal fun <T> buildWindowHistory(

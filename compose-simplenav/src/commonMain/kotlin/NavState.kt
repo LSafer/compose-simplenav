@@ -37,13 +37,12 @@ data class NavState<out T>(
      */
     fun <U> getTangent(
         name: String,
-        default: U,
         serializer: KSerializer<U>,
         format: StringFormat = Json,
-    ): NavState<U> {
-        val rawState = tangents[name] ?: return NavState(default)
+    ): NavState<U>? {
+        val rawState = tangents[name] ?: return null
         return NavState(
-            format.decodeFromStringOrNull(serializer, rawState.route) ?: default,
+            format.decodeFromStringOrNull(serializer, rawState.route) ?: return null,
             rawState.tangents,
         )
     }
