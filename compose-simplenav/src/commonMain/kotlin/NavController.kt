@@ -38,6 +38,9 @@ abstract class NavController<T> {
     val canGoBack get() = currentIndex > 0
     val canGoForward get() = currentIndex < lastIndex
 
+    val backStack get() = entries.subList(0, currentIndex).asReversed()
+    val forwardStack get() = entries.subList(currentIndex + 1, entries.size)
+
     abstract fun back(): Boolean
     abstract fun forward(): Boolean
     abstract fun go(delta: Int): Int
