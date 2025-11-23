@@ -6,12 +6,14 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.StringFormat
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
+import net.lsafer.compose.simplenav.NavState.Companion.decoded
 import net.lsafer.compose.simplenav.internal.inferTangentName
 import kotlin.jvm.JvmName
+import kotlin.math.absoluteValue
 import kotlin.reflect.typeOf
 
 fun <U> NavController<*>.tangent(name: String, default: U, serializer: KSerializer<U>, format: StringFormat = Json) =
-    TangentNavController(this, name, default, serializer, format)
+    TangentNavController(this, name, NavState(default), serializer, format)
 
 inline fun <reified U : Any> NavController<*>.tangent(name: String, default: U, format: StringFormat = Json) =
     tangent(name, default, serializer<U>(), format)
@@ -31,6 +33,7 @@ inline fun <reified U> NavController<*>.tangent(default: U? = null, format: Stri
  * A proxy NavController that exposes one tangent inside a parent NavController.
  *
  * This acts like a small independent navigation controller but:
+ * - adjacent duplicates are automatically merged
  * - it shares history with its parent
  * - its state is stored *inside* the parent's NavState
  * - backward/forward navigation is delegated
@@ -42,35 +45,156 @@ inline fun <reified U> NavController<*>.tangent(default: U? = null, format: Stri
  * - map camera position
  *
  * @param name unique identifier for the tangent
- * @param default value to use when the tangent has not been created yet
+ * @param defaultState value to use when the tangent has not been created yet
  */
 class TangentNavController<T>(
-    outer: NavController<*>,
+    private val outer: NavController<*>,
     private val name: String,
-    private val default: T,
+    private val defaultState: NavState<T>,
     private val serializer: KSerializer<T>,
     private val format: StringFormat = Json,
 ) : NavController<T>() {
-    @Suppress("UNCHECKED_CAST")
-    private val outer = outer as NavController<Any?>
-
     override val entries by derivedStateOf {
-        outer.entries.map { it.getTangent(name, default, serializer, format) }
+        buildList<NavState<T>> {
+            var prevRawState: Any? = Any()
+
+            for (entry in outer.entries) {
+                val rawState = entry.tangents[name]
+                if (prevRawState == rawState)
+                    continue
+
+                prevRawState = rawState
+                add(rawState?.decoded(serializer, format) ?: defaultState)
+            }
+        }
     }
 
     override val state by derivedStateOf {
-        outer.state.getTangent(name, default, serializer, format)
+        outer.state.tangents[name]
+            ?.decoded(serializer, format)
+            ?: defaultState
     }
 
-    override val currentIndex get() = outer.currentIndex
+    override val currentIndex by derivedStateOf it@{
+        var innerSteps = 0
 
-    override fun back() = outer.back()
-    override fun forward() = outer.forward()
-    override fun go(delta: Int) = outer.go(delta)
+        var prevRawState = outer.state.tangents[name]
+        for (entry in outer.backStack) {
+            val rawState = entry.tangents[name]
+            if (prevRawState == rawState)
+                continue
+
+            innerSteps++
+            prevRawState = rawState
+        }
+
+        innerSteps
+    }
+
+    override fun back(): Boolean {
+        var outerSteps = 0
+        val currentRawState = outer.state.tangents[name]
+
+        for (entry in outer.backStack) {
+            outerSteps++
+
+            val rawState = entry.tangents[name]
+            if (rawState == currentRawState)
+                continue
+
+            outer.go(-outerSteps)
+            return true
+        }
+
+        return false
+    }
+
+    override fun forward(): Boolean {
+        var outerSteps = 0
+        val currentRawState = outer.state.tangents[name]
+
+        for (entry in outer.forwardStack) {
+            outerSteps++
+
+            val rawState = entry.tangents[name]
+            if (rawState == currentRawState)
+                continue
+
+            outer.go(outerSteps)
+            return true
+        }
+
+        return false
+    }
+
+    override fun go(delta: Int): Int {
+        if (delta == 0) return 0
+
+        val targetInnerSteps = delta.absoluteValue
+        var innerSteps = 0
+        var outerSteps = 0
+        var prevRawState = outer.state.tangents[name]
+        var prevRawStateOuterSteps = 0
+
+        if (delta > 0) {
+            if (outer.forwardStack.isEmpty())
+                return 0
+
+            for (entry in outer.forwardStack) {
+                outerSteps++
+
+                val rawState = entry.tangents[name]
+                if (rawState == prevRawState)
+                    continue
+
+                innerSteps++
+
+                if (innerSteps == targetInnerSteps) {
+                    outer.go(outerSteps)
+                    return innerSteps
+                }
+
+                prevRawState = rawState
+                prevRawStateOuterSteps = outerSteps
+            }
+
+            outer.go(prevRawStateOuterSteps)
+            return innerSteps
+        }
+        if (delta < 0) {
+            if (outer.backStack.isEmpty())
+                return 0
+
+            for (entry in outer.backStack) {
+                outerSteps++
+
+                val rawState = entry.tangents[name]
+                if (rawState == prevRawState)
+                    continue
+
+                innerSteps++
+
+                if (innerSteps == targetInnerSteps) {
+                    outer.go(-outerSteps)
+                    return -innerSteps
+                }
+
+                prevRawState = rawState
+                prevRawStateOuterSteps = outerSteps
+            }
+
+            outer.go(-prevRawStateOuterSteps)
+            return -innerSteps
+        }
+
+        return 0 // <-- this is unreachable
+    }
 
     override fun edit(replace: Boolean, transform: (NavState<T>) -> NavState<T>?): Boolean {
+        @Suppress("UNCHECKED_CAST")
+        outer as NavController<Any?>
         return outer.edit(replace = replace) { outerState ->
-            val newState = transform(outerState.getTangent(name, default, serializer, format))
+            val newState = transform(outerState.getTangent(name, serializer, format) ?: defaultState)
             newState ?: return@edit null
             val newOuterState = outerState.withTangent(name, newState, serializer, format)
             return@edit newOuterState
