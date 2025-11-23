@@ -84,19 +84,23 @@ class WindowNavController<T>(
         return true
     }
 
-    override fun go(delta: Int) {
+    override fun go(delta: Int): Int {
         require(isInstalled) { "NavController not installed" }
-        if (delta == 0) return
+        if (delta == 0) return 0
         if (delta > 0) {
-            if (currentIndex == lastIndex) return
+            if (currentIndex == lastIndex) return 0
             val d = minOf(delta, lastIndex - currentIndex)
             window.history.go(d)
+            return d
         }
         if (delta < 0) {
-            if (currentIndex == 0) return
+            if (currentIndex == 0) return 0
             val d = maxOf(delta, -currentIndex)
             window.history.go(d)
+            return d
         }
+
+        return 0 // <-- this is unreachable
     }
 
     override fun edit(replace: Boolean, transform: (NavState<T>) -> NavState<T>?): Boolean {

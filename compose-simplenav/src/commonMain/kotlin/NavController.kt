@@ -40,7 +40,7 @@ abstract class NavController<T> {
 
     abstract fun back(): Boolean
     abstract fun forward(): Boolean
-    abstract fun go(delta: Int)
+    abstract fun go(delta: Int): Int
 
     fun goTo(index: Int) = go(index - currentIndex)
     fun goToFirst() = go(-currentIndex)
