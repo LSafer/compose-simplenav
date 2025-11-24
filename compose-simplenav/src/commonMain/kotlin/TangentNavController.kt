@@ -48,12 +48,14 @@ inline fun <reified U> NavController<*>.tangent(default: U? = null, format: Stri
  * @param defaultState value to use when the tangent has not been created yet
  */
 class TangentNavController<T>(
-    private val outer: NavController<*>,
-    private val name: String,
+    val outer: NavController<*>,
+    val name: String,
     private val defaultState: NavState<T>,
     private val serializer: KSerializer<T>,
     private val format: StringFormat = Json,
 ) : NavController<T>() {
+    val root: NavController<*> = if (outer is TangentNavController<*>) outer.root else outer
+
     override val entries by derivedStateOf {
         buildList<NavState<T>> {
             var prevRawState: Any? = Any()
