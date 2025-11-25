@@ -87,6 +87,11 @@ abstract class NavController<T> {
      * This is the core primitive of navigation; everything else (push/replace/navigate)
      * is implemented through this.
      *
+     * When [replace] is set to false, the forward stack will be reset and the new entry
+     * will be added to the navigation stack and navigated to.
+     * Otherwise, if [replace] is set to true, the forward stack won't be changed and the
+     * new entry will replace the current one instead.
+     *
      * @param replace if true, modifies the current entry instead of adding a new one.
      * @param transform transformation block, returning null cancels the edit.
      * @return false, if [transform] returned null.
@@ -99,6 +104,11 @@ abstract class NavController<T> {
     /**
      * Navigates to a new route produced by [transform], optionally replacing the
      * current entry or inheriting its tangents.
+     *
+     * When [replace] is set to false, the forward stack will be reset and the new entry
+     * will be added to the navigation stack and navigated to.
+     * Otherwise, if [replace] is set to true, the forward stack won't be changed and the
+     * new entry will replace the current one instead.
      *
      * @param replace if true, modifies the current entry instead of adding a new one. (false by default)
      * @param inherit if true, the new state inherits all tangents from the current state. (true by default)
@@ -129,6 +139,11 @@ abstract class NavController<T> {
     /**
      * Navigates to a new route given as [route], optionally replacing the
      * current entry or inheriting its tangents.
+     *
+     * When [replace] is set to false, the forward stack will be reset and the new entry
+     * will be added to the navigation stack and navigated to.
+     * Otherwise, if [replace] is set to true, the forward stack won't be changed and the
+     * new entry will replace the current one instead.
      *
      * @param replace if true, modifies the current entry instead of adding a new one. (false by default)
      * @param inherit if true, the new state inherits all tangents from the current state. (true by default)

@@ -81,7 +81,8 @@ class InMemoryNavController<T>(
             val newState = transform(state) ?: return false
 
             if (replace) {
-                stateList.removeRange(position + 1, stateList.size)
+                // this was commented out to align with browser behaviour
+                // stateList.removeRange(position + 1, stateList.size)
                 stateList[position] = newState
             } else {
                 stateList.removeRange(position + 1, stateList.size)
