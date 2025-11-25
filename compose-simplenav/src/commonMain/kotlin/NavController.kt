@@ -13,44 +13,72 @@ import androidx.compose.runtime.getValue
  * This controller supports *reactive* (Compose) API usage through snapshot state.
  */
 abstract class NavController<T> {
-    /**
-     * The full list of entries in this controller.
-     */
+    /** The full list of entries in this controller. */
     abstract val entries: List<NavState<T>>
 
-    /**
-     * The index of the current entry.
-     */
+    /** The index of the current entry. */
     abstract val currentIndex: Int
 
-    /**
-     * The current full navigation state, including route and tangents.
-     */
+    /** The current full navigation state, including route and tangents. */
     abstract val state: NavState<T>
 
-    /**
-     * The current route.
-     */
+    /** The current route. */
     val current by derivedStateOf { state.route }
     /** The previous route. */
     val previous get() = entries.getOrNull(currentIndex - 1)
     /** The next route. */
     val next get() = entries.getOrNull(currentIndex + 1)
 
+    /** The count of all entries in the navigation stack. */
     val length get() = entries.size
+    /** The index of the last entry in the navigation stack. */
     val lastIndex get() = length - 1
+    /** True, to indicate that navigating back is possible. */
     val canGoBack get() = currentIndex > 0
+    /** True, to indicate that navigating forward is possible. */
     val canGoForward get() = currentIndex < lastIndex
 
+    /** The entries before the current entry in the navigation stack sorted last-to-first */
     val backStack get() = entries.subList(0, currentIndex).asReversed()
+    /** The entries after the current entry in the navigation stack sorted first-to-last */
     val forwardStack get() = entries.subList(currentIndex + 1, entries.size)
 
+    /**
+     * Attempt to navigate to the previous entry.
+     *
+     * @return false on failure.
+     */
     abstract fun back(): Boolean
+    /**
+     * Attempt to navigate to the next entry.
+     *
+     * @return false on failure.
+     */
     abstract fun forward(): Boolean
+    /**
+     * Attempt to navigate [delta] positions from the current entry.
+     *
+     * @return the number of positions navigated.
+     */
     abstract fun go(delta: Int): Int
 
+    /**
+     * Attempt to navigate to the entry with [index].
+     *
+     * @return the number of positions navigated.
+     */
     fun goTo(index: Int) = go(index - currentIndex)
+    /**
+     * Navigate to the first entry.
+     *
+     * @return the number of positions navigated.
+     */
     fun goToFirst() = go(-currentIndex)
+    /**
+     * Navigate to the last entry.
+     *
+     * @return the number of positions navigated.
+     */
     fun goToLast() = go(lastIndex - currentIndex)
 
     /**
@@ -59,7 +87,7 @@ abstract class NavController<T> {
      * This is the core primitive of navigation; everything else (push/replace/navigate)
      * is implemented through this.
      *
-     * @param replace if true, modifies the current entry instead of adding a new one. (false by default)
+     * @param replace if true, modifies the current entry instead of adding a new one.
      * @param transform transformation block, returning null cancels the edit.
      * @return false, if [transform] returned null.
      */
