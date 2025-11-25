@@ -32,6 +32,10 @@ abstract class NavController<T> {
      * The current route.
      */
     val current by derivedStateOf { state.route }
+    /** The previous route. */
+    val previous get() = entries.getOrNull(currentIndex - 1)
+    /** The next route. */
+    val next get() = entries.getOrNull(currentIndex + 1)
 
     val length get() = entries.size
     val lastIndex get() = length - 1
