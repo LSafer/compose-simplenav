@@ -43,6 +43,9 @@ abstract class NavController<T> {
     /** The entries after the current entry in the navigation stack sorted first-to-last */
     val forwardStack get() = entries.subList(currentIndex + 1, entries.size)
 
+    abstract val canClearBackStack: Boolean
+    abstract val canClearForwardStack: Boolean
+
     /**
      * Attempt to navigate to the previous entry.
      *
@@ -80,6 +83,20 @@ abstract class NavController<T> {
      * @return the number of positions navigated.
      */
     fun goToLast() = go(lastIndex - currentIndex)
+
+    /**
+     * Attempt to remove all entries before the current one.
+     *
+     * @return false on failure.
+     */
+    abstract fun clearBackStack(): Boolean
+
+    /**
+     * Attempt to remove all entries after the current one.
+     *
+     * @return false on failure.
+     */
+    abstract fun clearForwardStack(): Boolean
 
     /**
      * Edits the current NavState.

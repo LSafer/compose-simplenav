@@ -70,6 +70,9 @@ class WindowNavController<T>(
     override var currentIndex: Int by mutableStateOf(0)
         private set
 
+    override val canClearBackStack get() = false
+    override val canClearForwardStack get() = false
+
     override fun back(): Boolean {
         require(isInstalled) { "NavController not installed" }
         if (!canGoBack) return false
@@ -102,6 +105,9 @@ class WindowNavController<T>(
 
         return 0 // <-- this is unreachable
     }
+
+    override fun clearBackStack() = false
+    override fun clearForwardStack() = false
 
     override fun edit(replace: Boolean, transform: (NavState<T>) -> NavState<T>?): Boolean {
         require(isInstalled) { "NavController not installed" }

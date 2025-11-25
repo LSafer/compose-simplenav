@@ -93,6 +93,9 @@ class TangentNavController<T>(
         innerSteps
     }
 
+    override val canClearBackStack get() = outer.canClearBackStack
+    override val canClearForwardStack get() = outer.canClearForwardStack
+
     override fun back(): Boolean {
         var outerSteps = 0
         val currentRawState = outer.state.tangents[name]
@@ -191,6 +194,9 @@ class TangentNavController<T>(
 
         return 0 // <-- this is unreachable
     }
+
+    override fun clearBackStack() = outer.clearBackStack()
+    override fun clearForwardStack() = outer.clearForwardStack()
 
     override fun edit(replace: Boolean, transform: (NavState<T>) -> NavState<T>?): Boolean {
         @Suppress("UNCHECKED_CAST")

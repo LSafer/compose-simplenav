@@ -36,6 +36,9 @@ class InMemoryNavController<T>(
     override val entries get() = stateList.toList()
     override val currentIndex get() = position
 
+    override val canClearBackStack get() = true
+    override val canClearForwardStack get() = true
+
     override fun back(): Boolean {
         synchronized(lock) {
             if (position <= 0)
@@ -74,6 +77,21 @@ class InMemoryNavController<T>(
         }
 
         return 0 // <-- this is unreachable
+    }
+
+    override fun clearBackStack(): Boolean {
+        synchronized(lock) {
+            stateList.removeRange(0, position)
+            position = 0
+        }
+        return true
+    }
+
+    override fun clearForwardStack(): Boolean {
+        synchronized(lock) {
+            stateList.removeRange(position + 1, stateList.size)
+        }
+        return true
     }
 
     override fun edit(replace: Boolean, transform: (NavState<T>) -> NavState<T>?): Boolean {
