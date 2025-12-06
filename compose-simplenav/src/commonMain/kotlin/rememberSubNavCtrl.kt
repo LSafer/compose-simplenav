@@ -6,32 +6,10 @@ import kotlinx.serialization.StringFormat
 import kotlinx.serialization.json.Json
 import kotlin.jvm.JvmName
 
-/** Remember an in-memory nav controller with the given initial parameters. */
-@Composable
-fun <T : Any> rememberNavCtrl(
-    default: T,
-    tangents: NavTangentMap = emptyMap(),
-): NavController<T> = remember(default, tangents) {
-    InMemoryNavController(default, tangents)
-}
-
-/** Remember an in-memory nav controller with the given initial parameters. */
-@Composable
-@JvmName("rememberNavCtrl_nullable")
-fun <T> rememberNavCtrl(
-    default: T? = null,
-    tangents: NavTangentMap = emptyMap(),
-): NavController<T?> = remember(default, tangents) {
-    InMemoryNavController(default, tangents)
-}
-
-//
-
 /** Remember a tangent nav controller of [navCtrl] with the given initial parameters. */
 @Composable
-@Deprecated("Use rememberSubNavCtrl instead")
-inline fun <reified T : Any> rememberNavCtrl(
-    navCtrl: NavController<*>,
+context(navCtrl: NavController<*>)
+inline fun <reified T : Any> rememberSubNavCtrl(
     default: T,
     format: StringFormat = Json,
 ): NavController<T> = remember(navCtrl, default, format) {
@@ -40,10 +18,9 @@ inline fun <reified T : Any> rememberNavCtrl(
 
 /** Remember a tangent nav controller of [navCtrl] with the given initial parameters. */
 @Composable
-@JvmName("rememberNavCtrl_nullable")
-@Deprecated("Use rememberSubNavCtrl instead")
-inline fun <reified T> rememberNavCtrl(
-    navCtrl: NavController<*>,
+@JvmName("rememberSubNavCtrl_nullable")
+context(navCtrl: NavController<*>)
+inline fun <reified T> rememberSubNavCtrl(
     default: T? = null,
     format: StringFormat = Json,
 ): NavController<T?> = remember(navCtrl, default, format) {
@@ -54,9 +31,8 @@ inline fun <reified T> rememberNavCtrl(
 
 /** Remember a tangent nav controller of [navCtrl] with the given initial parameters. */
 @Composable
-@Deprecated("Use rememberSubNavCtrl instead")
-inline fun <reified T : Any> rememberNavCtrl(
-    navCtrl: NavController<*>,
+context(navCtrl: NavController<*>)
+inline fun <reified T : Any> rememberSubNavCtrl(
     name: String,
     default: T,
     format: StringFormat = Json,
@@ -66,10 +42,9 @@ inline fun <reified T : Any> rememberNavCtrl(
 
 /** Remember a tangent nav controller of [navCtrl] with the given initial parameters. */
 @Composable
-@JvmName("rememberNavCtrl_nullable")
-@Deprecated("Use rememberSubNavCtrl instead")
-inline fun <reified T> rememberNavCtrl(
-    navCtrl: NavController<*>,
+@JvmName("rememberSubNavCtrl_nullable")
+context(navCtrl: NavController<*>)
+inline fun <reified T> rememberSubNavCtrl(
     name: String,
     default: T? = null,
     format: StringFormat = Json,
