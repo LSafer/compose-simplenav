@@ -1,38 +1,44 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     alias(libs.plugins.vanniktech.mavenPublish)
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.kotlin.atomicfu)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.jetbrains.compose)
-    alias(libs.plugins.compose)
+    alias(libs.plugins.android.kmp.library)
+    alias(libs.plugins.gradleup.tapmoc)
 }
 
 group = "net.lsafer.compose-simplenav"
 
+tapmoc {
+    java(libs.versions.java.get().toInt())
+    kotlin(libs.versions.kotlin.get())
+}
+
 kotlin {
-    androidTarget {
-        publishLibraryVariants("release")
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
-        }
-    }
     jvm("desktop")
     js { browser() }
-    @OptIn(ExperimentalWasmDsl::class)
+    @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
     wasmJs { browser() }
     compilerOptions {
         freeCompilerArgs.add("-Xcontext-parameters")
     }
+    android {
+        minSdk = libs.versions.android.minSdk.get().toInt()
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        namespace = "net.lsafer.compose.simplenav"
+    }
     sourceSets {
         val commonMain by getting
+        val desktopMain by getting
+        val androidMain by getting
         val jsMain by getting
         val wasmJsMain by getting
+
+        val jvmCommon by creating
+        jvmCommon.dependsOn(commonMain)
+        desktopMain.dependsOn(jvmCommon)
+        androidMain.dependsOn(jvmCommon)
 
         val webCommon by creating
         webCommon.dependsOn(commonMain)
@@ -42,42 +48,13 @@ kotlin {
     sourceSets.commonMain.dependencies {
         implementation(compose.runtime)
         implementation(libs.kotlinx.serialization.json)
+        implementation(libs.kotlinx.atomicfu)
+    }
+    sourceSets.commonTest.dependencies {
+        implementation(kotlin("test"))
     }
     sourceSets.named("webCommon").dependencies {
         implementation(libs.kotlinx.browser)
-    }
-}
-
-android {
-    namespace = "net.lsafer.compose.simplenav"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-
-    sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
-    sourceSets["main"].res.srcDirs("src/androidMain/res")
-    sourceSets["main"].resources.srcDirs("src/commonMain/resources")
-
-    defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = false
-        }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-    buildFeatures {
-        compose = true
-    }
-    dependencies {
-        debugImplementation(compose.uiTooling)
     }
 }
 
