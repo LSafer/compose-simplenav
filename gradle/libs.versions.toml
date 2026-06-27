@@ -1,5 +1,5 @@
 [versions]
-java = "22"
+java = "17"
 kotlin = "2.4.0"
 kotlinx-serialization = "1.11.0"
 kotlinx-atomicfu = "0.33.0"
